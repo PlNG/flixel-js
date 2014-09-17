@@ -73,7 +73,7 @@ Flixel.plugin.FlxSplashScreen.prototype.create = function()
 	this.add(new Flixel.plugin.FlxLogoPixel(left, top + pixelSize, (0xFFFFBF37), pixelSize)); // Gold
 	this.add(new Flixel.plugin.FlxLogoPixel(left + pixelSize, top + (pixelSize * 2), (0xFF0BC8FF), pixelSize)); // Light Blue
 	this.add(new Flixel.plugin.FlxLogoPixel(left, top + (pixelSize * 2), (0xFF3B43FF), pixelSize)); // Dark Blue
-	this.add(new Flixel.plugin.FlxLogoPixel(left + pixelSize, top + (pixelSize * 3), (0xFF00B92B), pixelSize)); // Green
+	this.add(new Flixel.plugin.FlxLogoPixel(left, top + (pixelSize * 3), (0xFF00B92B), pixelSize)); // Green
 
 	// Set the powered by position
 	poweredBy.x = Flixel.FlxG.width / 2 - poweredBy.width / 2;

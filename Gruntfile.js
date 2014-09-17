@@ -20,7 +20,7 @@ module.exports = function(grunt)
 
 		// All the source files
 		src : {
-			Flixel : [
+			flixel : [
 			// Global elements
 			'src/Flixel.js',
 			// Support elements
@@ -133,7 +133,7 @@ module.exports = function(grunt)
 		// Compile stuff
 		clean : [ '<%= compile_dir %>' ],
 		concat : {
-			Flixel : {
+			flixel : {
 				options : {
 					process : {
 						data : {
@@ -142,30 +142,30 @@ module.exports = function(grunt)
 						}
 					}
 				},
-				src : [ '<%= src.Flixel %>' ],
-				dest : '<%= compile_dir %>/Flixel.js'
+				src : [ '<%= src.flixel %>' ],
+				dest : '<%= compile_dir %>/flixel.js'
 			}
 		},
 		umd : {
-			Flixel : {
-				src : '<%= concat.Flixel.dest %>',
-				dest : '<%= umd.Flixel.src %>'
+			flixel : {
+				src : '<%= concat.flixel.dest %>',
+				dest : '<%= umd.flixel.src %>'
 			}
 		},
 		uglify : {
-			Flixel : {
+			flixel : {
 				options : {
-					banner : '/*! Flixel v<%= pkg.version %> | (c) 2014 Ratalaika Games. */\n'
+					banner : '/*! flixel v<%= pkg.version %> | (c) 2014 Ratalaika Games. */\n'
 				},
-				src : [ '<%= umd.Flixel.dest %>' ],
-				dest : '<%= compile_dir %>/Flixel.min.js'
+				src : [ '<%= umd.flixel.dest %>' ],
+				dest : '<%= compile_dir %>/flixel.min.js'
 			}
 		},
 		copy : {
-			Flixel : {
+			flixel : {
 				nonull: true,
-				src: '<%= compile_dir %>/Flixel.min.js',
-				dest: '<%= dist_dir %>/Flixel.js',
+				src: '<%= compile_dir %>/flixel.min.js',
+				dest: '<%= dist_dir %>/flixel.js',
 			}
 		},
 		
@@ -220,7 +220,7 @@ module.exports = function(grunt)
 
 		// Check the code
 		jshint: {
-			all: ['Gruntfile.js', '<%= source_dir %>/**/*.js', '<%= compile_dir %>/Flixel.js']
+			all: ['Gruntfile.js', '<%= source_dir %>/**/*.js', '<%= compile_dir %>/flixel.js']
 		}
 	});
 
