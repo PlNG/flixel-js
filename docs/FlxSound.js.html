@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: FlxSound.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: FlxSound.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * This is the universal Flixel sound object, used for streaming, music, and sound effects.
+ * &lt;br>
+ * v1.0 Initial version
+ * 
+ * @version 1.0 - 17/09/2014
+ * @author	Adam Atomic
+ * @author	ratalaika / ratalaikaGames
+ */
+
+/**
+ * The FlxSound constructor gets all the variables initialized, but NOT ready to
+ * play a sound yet.
+ */
+Flixel.FlxSound = function()
+{
+	Flixel.FlxSound.parent.constructor.apply(this);
+
+	this.reset();
+};
+extend(Flixel.FlxSound, Flixel.FlxBasic);
+
+/**
+ * The ALL ID.
+ */
+Flixel.FlxSound.ALL = 0;
+/**
+ * Automatically determine the type of file.
+ */
+Flixel.FlxSound.TYPE_AUTO = 0;
+/**
+ * A short audio clip.
+ */
+Flixel.FlxSound.TYPE_SFX = 1;
+/**
+ * A large music file.
+ */
+Flixel.FlxSound.TYPE_MUSIC = 2;
+/**
+ * The X position of this sound in world coordinates. Only really matters if you
+ * are doing proximity/panning stuff.
+ */
+Flixel.FlxSound.prototype.x = 0;
+/**
+ * The Y position of this sound in world coordinates. Only really matters if you
+ * are doing proximity/panning stuff.
+ */
+Flixel.FlxSound.prototype.y = 0;
+/**
+ * Whether or not this sound should be automatically destroyed when you switch
+ * states.
+ */
+Flixel.FlxSound.prototype.survive = false;
+/**
+ * The ID3 song name. Defaults to null. Currently only works for streamed
+ * sounds.
+ */
+Flixel.FlxSound.prototype.name = null;
+/**
+ * The ID3 artist name. Defaults to null. Currently only works for streamed
+ * sounds.
+ */
+Flixel.FlxSound.prototype.artist = null;
+/**
+ * Stores the average wave amplitude of both stereo channels
+ */
+Flixel.FlxSound.prototype.amplitude = 0;
+/**
+ * Just the amplitude of the left stereo channel
+ */
+Flixel.FlxSound.prototype.amplitudeLeft = 0;
+/**
+ * Just the amplitude of the left stereo channel
+ */
+Flixel.FlxSound.prototype.amplitudeRight = 0;
+/**
+ * Whether to call destroy() when the sound has finished.
+ */
+Flixel.FlxSound.prototype.autoDestroy = false;
+/**
+ * Internal tracker for a Flash sound object.
+ */
+Flixel.FlxSound.prototype._sound = null;
+/**
+ * Internal tracker for a Flash sound channel object.
+ */
+Flixel.FlxSound.prototype._channel = null;
+/**
+ * Internal tracker for a Flash sound transform object.
+ */
+Flixel.FlxSound.prototype._transform = null;
+/**
+ * Internal tracker for whether the sound is paused or not (not the same as
+ * stopped).
+ */
+Flixel.FlxSound.prototype._paused = false;
+/**
+ * Internal tracker for the position in runtime of the music playback.
+ */
+Flixel.FlxSound.prototype._position = 0;
+/**
+ * Internal tracker for how loud the sound is.
+ */
+Flixel.FlxSound.prototype._volume = 0;
+/**
+ * Internal tracker for total volume adjustment.
+ */
+Flixel.FlxSound.prototype._volumeAdjust = 0;
+/**
+ * Internal tracker for whether the sound is looping or not.
+ */
+Flixel.FlxSound.prototype._looped = false;
+/**
+ * Internal tracker for the sound's "target" (for proximity and panning).
+ */
+Flixel.FlxSound.prototype._target = null;
+/**
+ * Internal tracker for the maximum effective radius of this sound (for
+ * proximity and panning).
+ */
+Flixel.FlxSound.prototype._radius = 0;
+/**
+ * Internal tracker for whether to pan the sound left and right. Default is
+ * false.
+ */
+Flixel.FlxSound.prototype._pan = false;
+/**
+ * Internal timer used to keep track of requests to fade out the sound playback.
+ */
+Flixel.FlxSound.prototype._fadeOutTimer = 0;
+/**
+ * Internal helper for fading out sounds.
+ */
+Flixel.FlxSound.prototype._fadeOutTotal = 0;
+/**
+ * Internal flag for whether to pause or stop the sound when it's done fading
+ * out.
+ */
+Flixel.FlxSound.prototype._pauseOnFadeOut = false;
+/**
+ * Internal timer for fading in the sound playback.
+ */
+Flixel.FlxSound.prototype._fadeInTimer = 0;
+/**
+ * Internal helper for fading in sounds.
+ */
+Flixel.FlxSound.prototype._fadeInTotal = 0;
+
+/**
+ * An internal function for clearing all the variables used by sounds.
+ */
+Flixel.FlxSound.prototype.reset = function()
+{
+	this.destroy();
+
+	this.x = 0;
+	this.y = 0;
+
+	this._position = 0;
+	this._paused = false;
+	this._volume = 1.0;
+	this._volumeAdjust = 1.0;
+	this._looped = false;
+	this._target = null;
+	this._radius = 0;
+	this._pan = false;
+	this._fadeOutTimer = 0;
+	this._fadeOutTotal = 0;
+	this._pauseOnFadeOut = false;
+	this._fadeInTimer = 0;
+	this._fadeInTotal = 0;
+	this.visible = false;
+	this.amplitude = 0;
+	this.amplitudeLeft = 0;
+	this.amplitudeRight = 0;
+	this.autoDestroy = false;
+
+	if (this._transform === null)
+		this._transform = new SoundTransform();
+	this._transform.pan = 0;
+};
+
+/**
+ * Clean up memory.
+ */
+Flixel.FlxSound.prototype.destroy = function()
+{
+	this._transform = null;
+	this.exists = false;
+	this.active = false;
+	this._target = null;
+	this.name = null;
+	this.artist = null;
+
+	if (this._channel) {
+		this._channel.stop();
+		this._channel = null;
+	}
+
+	Flixel.FlxSound.parent.destroy.apply(this);
+};
+
+/**
+ * Handles fade out, fade in, panning, proximity, and amplitude operations each
+ * frame.
+ */
+Flixel.FlxSound.prototype.update = function()
+{
+	if (!this.getPlaying())
+		return;
+
+	this._position = this._channel.position;
+
+	var radialMultiplier = 1.0;
+	var fadeMultiplier = 1.0;
+
+	// Distance-based volume control
+	if (this._target !== null) {
+		radialMultiplier = Flixel.FlxU.getDistance(new Flixel.FlxPoint(this._target.x, this._target.y), new Flixel.FlxPoint(this.x, this.y)) / this._radius;
+		if (radialMultiplier &lt; 0)
+			radialMultiplier = 0;
+		if (radialMultiplier > 1)
+			radialMultiplier = 1;
+
+		radialMultiplier = 1 - radialMultiplier;
+
+		if (this._pan) {
+			var d = (this.x - this._target.x) / this._radius;
+			if (d &lt; -1)
+				d = -1;
+			else if (d > 1)
+				d = 1;
+			this._transform.pan = d;
+		}
+	}
+
+	// Cross-fading volume control
+	if (this._fadeOutTimer > 0) {
+		this._fadeOutTimer -= Flixel.FlxG.elapsed;
+		if (this._fadeOutTimer &lt;= 0) {
+			if (this._pauseOnFadeOut)
+				this.pause();
+			else
+				this.stop();
+		}
+		fadeMultiplier = this._fadeOutTimer / this._fadeOutTotal;
+		if (fadeMultiplier &lt; 0)
+			fadeMultiplier = 0;
+	} else if (this._fadeInTimer > 0) {
+		this._fadeInTimer -= Flixel.FlxG.elapsed;
+		fadeMultiplier = this._fadeInTimer / this._fadeInTotal;
+		if (fadeMultiplier &lt; 0)
+			fadeMultiplier = 0;
+		fadeMultiplier = 1 - fadeMultiplier;
+	}
+
+	this._volumeAdjust = radialMultiplier * fadeMultiplier;
+	this.updateTransform();
+
+	// TODO: Amplitude data
+	// if (this._transform.volume > 0) {
+	// this.amplitudeLeft = this._channel.leftPeak / this._transform.volume;
+	// this.amplitudeRight = this._channel.rightPeak / this._transform.volume;
+	// this.amplitude = (this.amplitudeLeft + this.amplitudeRight) * 0.5;
+	// } else {
+	// this.amplitudeLeft = 0;
+	// this.amplitudeRight = 0;
+	// this.amplitude = 0;
+	// }
+};
+
+/**
+ * Overridden kill method.
+ */
+Flixel.FlxSound.prototype.kill = function()
+{
+	Flixel.FlxSound.parent.kill.apply(this);
+	this.cleanup(false);
+};
+
+/**
+ * One of two main setup functions for sounds, this function loads a sound from
+ * an embedded MP3.
+ * 
+ * @param EmbeddedSound
+ *            An embedded Class object representing an MP3 file.
+ * @param Looped
+ *            Whether or not this sound should loop endlessly.
+ * @param AutoDestroy
+ *            Whether or not this &lt;code>FlxSound&lt;/code> instance should be
+ *            destroyed when the sound finishes playing. Default value is false,
+ *            but FlxG.play() and FlxG.stream() will set it to true by default.
+ * 
+ * @return This &lt;code>FlxSound&lt;/code> instance (nice for chaining stuff
+ *         together, if you're into that).
+ */
+Flixel.FlxSound.prototype.loadEmbedded = function(EmbeddedSound, Looped, AutoDestroy)
+{
+	Looped = (Looped === undefined) ? false : Looped;
+	AutoDestroy = (AutoDestroy === undefined) ? false : AutoDestroy;
+
+	this.cleanup(true);
+
+	this._sound = EmbeddedSound;
+	// NOTE: can't pull ID3 info from embedded sound currently
+	this._looped = Looped;
+	this.autoDestroy = AutoDestroy;
+	this.updateTransform();
+	this.exists = true;
+	return this;
+};
+
+/**
+ * One of two main setup functions for sounds, this function loads a sound from
+ * a URL.
+ * 
+ * @param EmbeddedSound
+ *            A string representing the URL of the MP3 file you want to play.
+ * @param Looped
+ *            Whether or not this sound should loop endlessly.
+ * @param AutoDestroy
+ *            Whether or not this &lt;code>FlxSound&lt;/code> instance should be
+ *            destroyed when the sound finishes playing. Default value is false,
+ *            but FlxG.play() and FlxG.stream() will set it to true by default.
+ * 
+ * @return This &lt;code>FlxSound&lt;/code> instance (nice for chaining stuff
+ *         together, if you're into that).
+ */
+Flixel.FlxSound.prototype.loadStream = function(SoundURL, Looped, AutoDestroy)
+{
+	Looped = (Looped === undefined) ? false : Looped;
+	AutoDestroy = (AutoDestroy === undefined) ? false : AutoDestroy;
+
+	this.cleanup(true);
+
+	this._sound = SoundURL;
+	// _sound.addEventListener(Event.ID3, gotID3);
+	// _sound.load(new URLRequest(SoundURL));
+	this._looped = Looped;
+	this.autoDestroy = AutoDestroy;
+	this.updateTransform();
+	this.exists = true;
+	return this;
+};
+
+/**
+ * Call this function if you want this sound's volume to change based on
+ * distance from a particular FlxCore object.
+ * 
+ * @param X
+ *            The X position of the sound.
+ * @param Y
+ *            The Y position of the sound.
+ * @param TargetObject
+ *            The object you want to track.
+ * @param Radius
+ *            The maximum distance this sound can travel.
+ * @param Pan
+ *            Whether the sound should pan in addition to the volume changes
+ *            (default: true).
+ * 
+ * @return This FlxSound instance (nice for chaining stuff together, if you're
+ *         into that).
+ */
+Flixel.FlxSound.prototype.proximity = function(X, Y, TargetObject, Radius, Pan)
+{
+	Pan = (Pan === undefined) ? true : Pan;
+
+	this.x = X;
+	this.y = Y;
+	this._target = TargetObject;
+	this._radius = Radius;
+	this._pan = Pan;
+	return this;
+};
+
+/**
+ * Call this function to play the sound - also works on paused sounds.
+ * 
+ * @param ForceRestart
+ *            Whether to start the sound over or not. Default value is false,
+ *            meaning if the sound is already playing or was paused when you
+ *            call &lt;code>play()&lt;/code>, it will continue playing from its
+ *            current position, NOT start again from the beginning.
+ */
+Flixel.FlxSound.prototype.play = function(ForceRestart)
+{
+	ForceRestart = (ForceRestart === undefined) ? false : ForceRestart;
+	
+	if (!this.exists)
+		return;
+	
+
+	if (this.getPlaying()) {
+		return;
+	}
+
+	if (this._paused)
+		this.resume();
+	else
+		this.startSound(0, ForceRestart);
+};
+
+/**
+ * Unpause a sound. Only works on sounds that have been paused.
+ */
+Flixel.FlxSound.prototype.resume = function()
+{
+	if (this._channel !== null) {
+		if(this._channel.paused)
+			this._channel.resume();
+		else
+			this._channel.play();
+	}
+	
+	this._paused = false;
+	this.active = true;
+};
+
+/**
+ * Call this function to pause this sound.
+ */
+Flixel.FlxSound.prototype.pause = function()
+{
+	if (!this.getPlaying())
+		return;
+
+	if (this._channel !== null)
+		this._channel.pause();
+
+	this._paused = true;
+	this.active = false;
+};
+
+/**
+ * Call this function to stop this sound.
+ */
+Flixel.FlxSound.prototype.stop = function()
+{
+	if (this._channel !== null)
+		this._channel.stop();
+
+	this._paused = false;
+	this.active = false;
+};
+
+/**
+ * Call this function to make this sound fade out over a certain time interval.
+ * 
+ * @param Seconds
+ *            The amount of time the fade out operation should take.
+ * @param PauseInstead
+ *            Tells the sound to pause on fadeout, instead of stopping.
+ */
+Flixel.FlxSound.prototype.fadeOut = function(Seconds, PauseInstead)
+{
+	PauseInstead = (PauseInstead === undefined) ? false : PauseInstead;
+
+	if (!this.getPlaying()) {
+		return;
+	}
+
+	this._pauseOnFadeOut = PauseInstead;
+	this._fadeInTimer = 0;
+	this._fadeOutTimer = Seconds;
+	this._fadeOutTotal = this._fadeOutTimer;
+};
+
+/**
+ * Call this function to make a sound fade in over a certain time interval
+ * (calls &lt;code>play()&lt;/code> automatically).
+ * 
+ * @param Seconds
+ *            The amount of time the fade-in operation should take.
+ */
+Flixel.FlxSound.prototype.fadeIn = function(Seconds)
+{
+	this._fadeOutTimer = 0;
+	this._fadeInTimer = Seconds;
+	this._fadeInTotal = this._fadeInTimer;
+	this.play();
+};
+
+/**
+ * Whether or not the sound is currently playing.
+ */
+Flixel.FlxSound.prototype.getPlaying = function()
+{
+	return (this._channel !== null && this._channel.isPlaying);
+};
+
+/**
+ * Set &lt;code>volume&lt;/code> to a value between 0 and 1 to change how this sound
+ * is.
+ */
+Flixel.FlxSound.prototype.getVolume = function()
+{
+	return this._volume;
+};
+
+/**
+ * @private
+ */
+Flixel.FlxSound.prototype.setVolume = function(Volume)
+{
+	this._volume = Volume;
+	if (this._volume &lt; 0)
+		this._volume = 0;
+	else if (this._volume > 1)
+		this._volume = 1;
+	this.updateTransform();
+};
+
+/**
+ * Returns the currently selected "real" volume of the sound (takes fades and
+ * proximity into account).
+ * 
+ * @return The adjusted volume of the sound.
+ */
+Flixel.FlxSound.prototype.getActualVolume = function()
+{
+	return this._volume * this._volumeAdjust;
+};
+
+/**
+ * Call after adjusting the volume to update the sound channel's settings.
+ */
+Flixel.FlxSound.prototype.updateTransform = function()
+{
+	this._transform.volume = (Flixel.FlxG.getMute() ? 0 : 1) * Flixel.FlxG.getMusicVolume() * this._volume * this._volumeAdjust;
+	if (this._channel !== null)
+		this._channel.setVolume(this._transform.volume);
+};
+
+/**
+ * An internal helper function used to attempt to start playing the sound and
+ * populate the &lt;code>_channel&lt;/code> variable.
+ */
+Flixel.FlxSound.prototype.startSound = function(Position, ForceRestart)
+{
+	ForceRestart = (ForceRestart === undefined) ? false : ForceRestart;
+	
+	this._position = Position;
+	this._paused = false;
+	
+	// Initialize the channel if needed
+	if(this._channel === null)
+		this._channel = Flixel.FlxG.soundManager.add(this._sound, this._volume, this._looped);
+	
+	this._channel.play('', this._position, this._volume, this._looped, ForceRestart);
+
+	// Check if the sound is active or not
+	if (this._channel !== null) {
+		this.active = true;
+	} else {
+		this.exists = false;
+		this.active = false;
+	}
+};
+
+/**
+ * An internal helper function used to help Flash clean up (and potentially
+ * re-use) finished sounds. Will stop the current sound and destroy the
+ * associated &lt;code>SoundChannel&lt;/code>, plus, any other commands ordered by
+ * the passed in parameters.
+ * 
+ * @param destroySound
+ *            Whether or not to destroy the sound. If this is true, the position
+ *            and fading will be reset as well.
+ * @param resetPosition
+ *            Whether or not to reset the position of the sound.
+ * @param resetFading
+ *            Whether or not to reset the current fading variables of the sound.
+ */
+Flixel.FlxSound.prototype.cleanup = function(destroySound, resetPosition, resetFading)
+{
+	resetPosition = (resetPosition === undefined) ? true : resetPosition;
+	resetFading = (resetFading === undefined) ? true : resetFading;
+
+	if (destroySound) {
+		this.reset();
+		return;
+	}
+
+	if (this._channel) {
+		this._channel.onStop = null;
+		this._channel.stop();
+		this._channel = null;
+	}
+
+	this.active = false;
+
+	if (resetPosition) {
+		this._position = 0;
+		this._paused = false;
+	}
+
+	if (resetFading) {
+		this._fade = null;
+		this._onFadeComplete = null;
+	}
+};
+
+/**
+ * Internal event handler for ID3 info (i.e. fetching the song name).
+ * 
+ * @param event
+ *            An &lt;code>Event&lt;/code> object.
+ */
+Flixel.FlxSound.prototype.gotID3 = function(event)
+{
+	Flixel.FlxG.log("got ID3 info! NOT WORKING ON HTML5");
+	this.name = ""; // _sound.id3.songName;
+	this.artist = ""; // _sound.id3.artist;
+};
+
+/**
+ * Return true if the music is paused.
+ */
+Flixel.FlxSound.prototype.isPaused = function()
+{
+	return this._paused;
+};
+
+/**
+ * Return the music position
+ */
+Flixel.FlxSound.prototype.getPosition = function()
+{
+	if (this._channel !== null) {
+		return this._channel.position;
+	} else {
+		return -1;
+	}
+};
+
+/**
+ * Start the sound from a position.
+ */
+Flixel.FlxSound.prototype.setPosition = function(pos)
+{
+	this.pause();
+	this.startSound(pos);
+};
+
+/**
+ * Returns the class name.
+ */
+Flixel.FlxSound.prototype.toString = function()
+{
+	return "FlxSound";
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Flixel.FlxBasic.html">FlxBasic</a></li><li><a href="ScaleManager.html">ScaleManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="Flixel.html">Flixel</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BitmapData">BitmapData</a></li><li><a href="global.html#Cache">Cache</a></li><li><a href="global.html#CanvasManager">CanvasManager</a></li><li><a href="global.html#ColorTransform">ColorTransform</a></li><li><a href="global.html#Device">Device</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#FlixelExport">FlixelExport</a></li><li><a href="global.html#inherit">inherit</a></li><li><a href="global.html#int">int</a></li><li><a href="global.html#Loader">Loader</a></li><li><a href="global.html#LocalStorage">LocalStorage</a></li><li><a href="global.html#Matrix">Matrix</a></li><li><a href="global.html#Resource">Resource</a></li><li><a href="global.html#sleep">sleep</a></li><li><a href="global.html#SoundChannel">SoundChannel</a></li><li><a href="global.html#SoundManager">SoundManager</a></li><li><a href="global.html#SoundTransform">SoundTransform</a></li><li><a href="global.html#startTimer">startTimer</a></li><li><a href="global.html#StorageManager">StorageManager</a></li><li><a href="global.html#uint">uint</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed Sep 17 2014 12:41:42 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

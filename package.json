@@ -1,0 +1,39 @@
+{
+  "name": "Flixel-JS",
+  "version": "1.0.0",
+  "description": "Flixel JS is a port to JavaScript of Flixel AS3, it has also some improvements to increase performance.",
+  "author": "ratalaika && Ratalaika Games <ratalaika@gmail.com> (http://www.ratalaika.com)",
+  "homepage": "http://www.ratalaika.com",
+  "bugs": "https://github.com/ratalaika/flixel-js/issues",
+  "license": "MIT",
+  "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
+  "repository": {
+  	"type": "git",
+  	"url": "https://github.com/ratalaika/flixel-js.git"
+  },
+  "keywords": [
+    "flixel",
+    "HTML5",
+    "game",
+    "game engine",
+    "canvas",
+    "2d",
+    "web audio",
+    "physics",
+    "tweens",
+    "javascript"
+  ],
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-connect": "~0.5.0",
+    "grunt-contrib-copy": "~0.4.1",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-uglify": "~0.2.4",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt-jsdoc": "~0.5.1",
+    "grunt-open": "~0.2.0",
+    "lodash": "~2.2.1"
+  }
+}

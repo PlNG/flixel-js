@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: system/atlas/FlxAssetManager.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: system/atlas/FlxAssetManager.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * An asset manager that loads the whole images and texts referencig to them.&lt;br>
+ * &lt;br>
+ * v1.0 Initial version
+ * 
+ * @version 1.0 - 17/09/2014
+ * @author	ratalaika / ratalaikaGames
+ */
+
+/**
+ * Class constructor.
+ */
+Flixel.system.atlas.FlxAssetManager = function()
+{
+	if (Flixel.system.atlas.FlxAssetManager._instance !== undefined)
+		throw new Error("FlxAssetManager: Call getInstance()");
+
+	this._atlasMap = {};
+	this._keyMap = {};
+	this._items = 0;
+};
+
+/**
+ * The static instance.
+ */
+Flixel.system.atlas.FlxAssetManager._instance = new Flixel.system.atlas.FlxAssetManager();
+/**
+ * A dictionary with all the atlases we loaded.
+ */
+Flixel.system.atlas.FlxAssetManager.prototype._atlasMap = null;
+/**
+ * A dictionary with all the atlases keys we loaded.
+ */
+Flixel.system.atlas.FlxAssetManager.prototype._keyMap = null;
+/**
+ * The number of loaded atlases.
+ */
+Flixel.system.atlas.FlxAssetManager.prototype._items = 0;
+
+/**
+ * Load a new atlas.
+ * 
+ * @param pathFile
+ *            The text file.
+ * @param id
+ *            The file id (normally the file route -> path/path1/pack.txt).
+ */
+Flixel.system.atlas.FlxAssetManager.prototype.loadAtlas = function(fileText, graphicImage, atlasId)
+{
+	var atlasInfo = new Flixel.system.atlas.FlxAtlasInfo();
+	atlasInfo.loadAtlas(fileText, graphicImage);
+	this._atlasMap[atlasId] = atlasInfo;
+	this._keyMap[this._items] = atlasId;
+	this._items++;
+	console.log("New atlas loaded: " + atlasId);
+};
+
+/**
+ * Return a bitmap from an atlas.
+ * 
+ * @param id
+ *            The region id, normally (path/file.txt:region).
+ */
+Flixel.system.atlas.FlxAssetManager.prototype.getRegion = function(id)
+{
+	var path = id.split(":")[0];
+	var region = id.split(":")[1];
+
+	if (this._atlasMap[path] !== null && this._atlasMap[path] !== undefined) {
+		var atlasInfo = this._atlasMap[path];
+
+		// Check if the atlas info is null
+		if (atlasInfo === null || atlasInfo === undefined) {
+			Flixel.FlxG.log("The atlasInfo (" + id + ") couldn't be found", "FlxAssetManager");
+			return null;
+		}
+
+		var bitmapData = atlasInfo.getRegion(region);
+
+		// Check if the bitmapdata is null
+		if (bitmapData === null || bitmapData === undefined) {
+			Flixel.FlxG.log("The bitmapData (" + id + ") couldn't be found", "FlxAssetManager");
+			return null;
+		}
+
+		// We copy the original bitmap data because it will be disposed in FlxG.addBitmap
+		var newBitmapData = new BitmapData(bitmapData.width, bitmapData.height, true, 0x00000000);
+		newBitmapData.draw(bitmapData);
+
+		return newBitmapData;
+	} else {
+		Flixel.FlxG.log("The path (" + path + ") couldn't be found", "FlxAssetManager");
+		return null;
+	}
+};
+
+/**
+ * Return the number of loaded atlas.
+ */
+Flixel.system.atlas.FlxAssetManager.prototype.getNumAtlas = function()
+{
+	return this._items;
+};
+
+/**
+ * Return true if all the atlas images has been loaded.
+ */
+Flixel.system.atlas.FlxAssetManager.prototype.allLoaded = function()
+{
+	var allLoaded = true;
+	for (var i = 0; i &lt; this._items; i++) {
+		allLoaded = allLoaded && this._atlasMap[this._keyMap[i]].loaded();
+	}
+
+	return allLoaded;
+};
+
+/**
+ * Return a Tiled map instance.
+ */
+Flixel.system.atlas.FlxAssetManager.prototype.getEmbedMap = function(mapJson)
+{
+	var tiledMap = new Flixel.plugin.tmx.TiledMap(JSON.parse(mapJson));
+	return tiledMap;
+};
+
+/**
+ * Return the isntance of this object.
+ */
+Flixel.system.atlas.FlxAssetManager.getInstance = function()
+{
+	return Flixel.system.atlas.FlxAssetManager._instance;
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Flixel.FlxBasic.html">FlxBasic</a></li><li><a href="ScaleManager.html">ScaleManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="Flixel.html">Flixel</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BitmapData">BitmapData</a></li><li><a href="global.html#Cache">Cache</a></li><li><a href="global.html#CanvasManager">CanvasManager</a></li><li><a href="global.html#ColorTransform">ColorTransform</a></li><li><a href="global.html#Device">Device</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#FlixelExport">FlixelExport</a></li><li><a href="global.html#inherit">inherit</a></li><li><a href="global.html#int">int</a></li><li><a href="global.html#Loader">Loader</a></li><li><a href="global.html#LocalStorage">LocalStorage</a></li><li><a href="global.html#Matrix">Matrix</a></li><li><a href="global.html#Resource">Resource</a></li><li><a href="global.html#sleep">sleep</a></li><li><a href="global.html#SoundChannel">SoundChannel</a></li><li><a href="global.html#SoundManager">SoundManager</a></li><li><a href="global.html#SoundTransform">SoundTransform</a></li><li><a href="global.html#startTimer">startTimer</a></li><li><a href="global.html#StorageManager">StorageManager</a></li><li><a href="global.html#uint">uint</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed Sep 17 2014 12:41:42 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

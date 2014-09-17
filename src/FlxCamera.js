@@ -1,0 +1,833 @@
+/**
+ * The camera class is used to display the game's visuals in the Flash player.<br>
+ * By default one camera is created automatically, that is the same size as the Flash player.<br>
+ * You can add more cameras or even replace the main camera using utilities in <code>FlxG</code>.<br>
+ * <br>
+ * v1.0 Initial version
+ * 
+ * @version 1.0 - 17/09/2014
+ * @author ratalaika / ratalaikaGames
+ * @author Adam Atomic
+ */
+
+/**
+ * Instantiates a new camera at the specified location, with the specified size and zoom level.
+ * 
+ * @param X
+ *            X location of the camera's display in pixels. Uses native, 1:1 resolution, ignores zoom.
+ * @param Y
+ *            Y location of the camera's display in pixels. Uses native, 1:1 resolution, ignores zoom.
+ * @param Width
+ *            The width of the camera display in pixels.
+ * @param Height
+ *            The height of the camera display in pixels.
+ * @param Zoom
+ *            The initial zoom level of the camera. A zoom level of 2 will make all pixels display at 2x resolution.
+ */
+Flixel.FlxCamera = function(X, Y, Width, Height, Zoom, ScaleMode)
+{
+	Zoom = (Zoom === undefined) ? 0 : Zoom;
+	ScaleMode = (ScaleMode === undefined) ? Flixel.FlxCamera.NO_SCALE : ScaleMode;
+
+	Flixel.FlxCamera.parent.constructor.apply(this);
+
+	this.x = X;
+	this.y = Y;
+	this.width = Width;
+	this.height = Height;
+	this.target = null;
+	this.deadzone = null;
+	this.scroll = new Flixel.FlxPoint();
+	this._point = new Flixel.FlxPoint();
+	this.bounds = null;
+	this.screen = new Flixel.FlxSprite();
+	this.screen.makeGraphic(this.width, this.height, 0, true);
+	this.screen.setOriginToCorner();
+	this.buffer = this.screen.getPixels();
+	this.bgColor = Flixel.FlxG.getBgColor();
+	this._color = 0xFFFFFF;
+	this._alpha = 1.0;
+
+	this.setZoom(Zoom); // sets the scale of flash sprite, which in turn loads flashoffset values
+	this._flashOffsetX = this.width * 0.5 * this.getZoom();
+	this._flashOffsetY = this.height * 0.5 * this.getZoom();
+	this._flashRect = new Flixel.FlxRect(0, 0, this.width, this.height);
+	this._flashPoint = new Flixel.FlxPoint();
+
+	this._fxFlashColor = 0;
+	this._fxFlashDuration = 0.0;
+	this._fxFlashComplete = null;
+	this._fxFlashAlpha = 0.0;
+
+	this._fxFadeColor = 0;
+	this._fxFadeDuration = 0.0;
+	this._fxFadeComplete = null;
+	this._fxFadeAlpha = 0.0;
+
+	this._fxShakeIntensity = 0.0;
+	this._fxShakeDuration = 0.0;
+	this._fxShakeComplete = null;
+	this._fxShakeOffset = new Flixel.FlxPoint();
+	this._fxShakeDirection = 0;
+
+	this._fill = new BitmapData(this.width, this.height, true, 0);
+
+	this._style = -1;
+};
+extend(Flixel.FlxCamera, Flixel.FlxBasic);
+
+/**
+ * Camera "follow" style preset: camera has no deadzone, just tracks the focus object directly.
+ */
+Flixel.FlxCamera.STYLE_LOCKON = 0;
+/**
+ * Camera "follow" style preset: camera deadzone is narrow but tall.
+ */
+Flixel.FlxCamera.STYLE_PLATFORMER = 1;
+/**
+ * Camera "follow" style preset: camera deadzone is a medium-size square around the focus object.
+ */
+Flixel.FlxCamera.STYLE_TOPDOWN = 2;
+/**
+ * Camera "follow" style preset: camera deadzone is a small square around the focus object.
+ */
+Flixel.FlxCamera.STYLE_TOPDOWN_TIGHT = 3;
+/**
+ * Camera "follow" style preset: camera will move screenwise.
+ */
+Flixel.FlxCamera.STYLE_SCREEN_BY_SCREEN = 4;
+/**
+ * Camera "follow" style preset: camera has no deadzone, just tracks the focus object directly and centers it.
+ */
+Flixel.FlxCamera.STYLE_NO_DEAD_ZONE = 5;
+/**
+ * Camera "shake" effect preset: shake camera on both the X and Y axes.
+ */
+Flixel.FlxCamera.SHAKE_BOTH_AXES = 0;
+/**
+ * Camera "shake" effect preset: shake camera on the X axis only.
+ */
+Flixel.FlxCamera.SHAKE_HORIZONTAL_ONLY = 1;
+/**
+ * Camera "shake" effect preset: shake camera on the Y axis only.
+ */
+Flixel.FlxCamera.SHAKE_VERTICAL_ONLY = 2;
+/**
+ * Camera "scale" mode preset: The game is not scaled.
+ */
+Flixel.FlxCamera.NO_SCALE = 0;
+/**
+ * Camera "scale" mode preset: Scales the stage to fill the display<br>
+ * in the x direction without stretching.
+ */
+Flixel.FlxCamera.FILL_X = 1;
+/**
+ * Camera "scale" mode preset: Scales the stage to fill the display<br>
+ * in the y direction without stretching.
+ */
+Flixel.FlxCamera.FILL_Y = 2;
+/**
+ * Camera "scale" mode preset: Stretches the game to fill the entire screen.
+ */
+Flixel.FlxCamera.STRETCH = 3;
+/**
+ * Camera "scale" mode preset: Stretches the game to show all the content.
+ */
+Flixel.FlxCamera.EXACT_FIT = 4;
+/**
+ * While you can alter the zoom of each camera after the fact,<br>
+ * this variable determines what value the camera will start at when created.
+ */
+Flixel.FlxCamera.defaultZoom = 0;
+/**
+ * While you can alter the scale mode of each camera after the fact,<br>
+ * this variable determines what value the camera will start at when created.
+ */
+Flixel.FlxCamera.defaultScaleMode = 0;
+/**
+ * The X position of this camera's display. Zoom does NOT affect this number.<br>
+ * Measured in pixels from the left side of the flash window.
+ */
+Flixel.FlxCamera.prototype.x = 0;
+/**
+ * The Y position of this camera's display. Zoom does NOT affect this number.<br>
+ * Measured in pixels from the top of the flash window.
+ */
+Flixel.FlxCamera.prototype.y = 0;
+/**
+ * How wide the camera display is, in game pixels.
+ */
+Flixel.FlxCamera.prototype.width = 0;
+/**
+ * How tall the camera display is, in game pixels.
+ */
+Flixel.FlxCamera.prototype.height = 0;
+/**
+ * Tells the camera to follow this <code>FlxObject</code> object around.
+ */
+Flixel.FlxCamera.prototype.target = null;
+/**
+ * You can assign a "dead zone" to the camera in order to better control its movement.<br>
+ * The camera will always keep the focus object inside the dead zone,<br>
+ * unless it is bumping up against the bounds rectangle's edges.<br>
+ * The deadzone's coordinates are measured from the camera's upper left corner in game pixels.<br>
+ * For rapid prototyping, you can use the preset deadzones (e.g. <code>STYLE_PLATFORMER</code>) with <code>follow()</code>.
+ */
+Flixel.FlxCamera.prototype.deadzone = null;
+/**
+ * The edges of the camera's range, i.e. where to stop scrolling. Measured in game pixels and world coordinates.
+ */
+Flixel.FlxCamera.prototype.bounds = null;
+/**
+ * Stores the basic parallax scrolling values.
+ */
+Flixel.FlxCamera.prototype.scroll = null;
+/**
+ * The actual bitmap data of the camera display itself.
+ */
+Flixel.FlxCamera.prototype.buffer = null;
+/**
+ * Sometimes it's easier to just work with a <code>FlxSprite</code> than it is to work<br>
+ * directly with the <code>BitmapData</code> buffer.<br>
+ * This sprite reference will allow you to do exactly that.
+ */
+Flixel.FlxCamera.prototype.screen = null;
+/**
+ * The natural background color of the camera. Defaults to FlxG.bgColor.<br>
+ * NOTE: can be transparent for crazy FX!
+ */
+Flixel.FlxCamera.prototype.bgColor = 0;
+/**
+ * Indicates how far the camera is zoomed in.
+ */
+Flixel.FlxCamera.prototype._zoom = 0;
+/**
+ * Decides how Flixel handles different screen sizes.
+ */
+Flixel.FlxCamera.prototype._scaleMode = 0;
+Flixel.FlxCamera.prototype._screenScaleFactorX = 1;
+Flixel.FlxCamera.prototype._screenScaleFactorY = 1;
+Flixel.FlxCamera.prototype.viewportWidth = 0;
+Flixel.FlxCamera.prototype.viewportHeight = 0;
+/**
+ * Internal, to help avoid costly allocations.
+ */
+Flixel.FlxCamera.prototype._point = null;
+/**
+ * Internal, help with color transforming the flash bitmap.
+ */
+Flixel.FlxCamera.prototype._color = 0;
+/**
+ * Internal, used to render buffer to screen space.
+ */
+Flixel.FlxCamera.prototype._flashOffsetX = 0;
+/**
+ * Internal, used to render buffer to screen space.
+ */
+Flixel.FlxCamera.prototype._flashOffsetY = 0;
+/**
+ * Internal, used to render buffer to screen space.
+ */
+Flixel.FlxCamera.prototype._flashRect = null;
+/**
+ * Internal, used to render buffer to screen space.
+ */
+Flixel.FlxCamera.prototype._flashPoint = null;
+/**
+ * Internal, used to control the "flash" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFlashColor = 0;
+/**
+ * Internal, used to control the "flash" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFlashDuration = 0;
+/**
+ * Internal, used to control the "flash" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFlashComplete = null;
+/**
+ * Internal, used to control the "flash" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFlashAlpha = 0;
+/**
+ * Internal, used to control the "fade" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFadeColor = 0;
+/**
+ * Internal, used to control the "fade" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFadeDuration = 0;
+/**
+ * Internal, used to control the "fade" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFadeComplete = null;
+/**
+ * Internal, used to control the "fade" special effect.
+ */
+Flixel.FlxCamera.prototype._fxFadeAlpha = 0;
+/**
+ * Internal, used to control the "shake" special effect.
+ */
+Flixel.FlxCamera.prototype._fxShakeIntensity = 0;
+/**
+ * Internal, used to control the "shake" special effect.
+ */
+Flixel.FlxCamera.prototype._fxShakeDuration = 0;
+/**
+ * Internal, used to control the "shake" special effect.
+ */
+Flixel.FlxCamera.prototype._fxShakeComplete = null;
+/**
+ * Internal, used to control the "shake" special effect.
+ */
+Flixel.FlxCamera.prototype._fxShakeOffset = null;
+/**
+ * Internal, used to control the "shake" special effect.
+ */
+Flixel.FlxCamera.prototype._fxShakeDirection = 0;
+/**
+ * Internal helper variable for doing better wipes/fills between renders.
+ */
+Flixel.FlxCamera.prototype._fill = null;
+/**
+ * Internal helper to store the angle of the camera.
+ */
+Flixel.FlxCamera.prototype._angle = 0;
+/**
+ * Internal helper to store the alpha value of the camera.
+ */
+Flixel.FlxCamera.prototype._alpha = 0;
+/**
+ * Tells the camera to use this following style.
+ */
+Flixel.FlxCamera.prototype._style = 0;
+
+/**
+ * Clean up memory.
+ */
+Flixel.FlxCamera.prototype.destroy = function()
+{
+	if (this.screen !== null)
+		this.screen.destroy();
+	this.screen = null;
+	this.target = null;
+	this.scroll = null;
+	this.deadzone = null;
+	this.bounds = null;
+	this.buffer = null;
+	this._flashRect = null;
+	this._flashPoint = null;
+	this._fxFlashComplete = null;
+	this._fxFadeComplete = null;
+	this._fxShakeComplete = null;
+	this._fxShakeOffset = null;
+	this._fill = null;
+
+	Flixel.FlxCamera.parent.destroy.apply(this);
+};
+
+/**
+ * Updates the camera scroll as well as special effects like screen-shake or fades.
+ */
+Flixel.FlxCamera.prototype.update = function()
+{
+	// Either follow the object closely,
+	// or doublecheck our deadzone and update accordingly.
+	if (this.target !== null) {
+		if (this.deadzone === null)
+			this.focusOn(this.target.getMidpoint(this._point));
+		else {
+			var edge = 0;
+			var targetX = Math.ceil(this.target.x + ((this.target.x > 0) ? 0.0000001 : -0.0000001));
+			var targetY = Math.ceil(this.target.y + ((this.target.y > 0) ? 0.0000001 : -0.0000001));
+
+			if (this._style == Flixel.FlxCamera.STYLE_SCREEN_BY_SCREEN) {
+				if (targetX > this.scroll.x + this.width)
+					this.scroll.x += this.width;
+				else if (targetX < this.scroll.x)
+					this.scroll.x -= this.width;
+
+				if (targetY > this.scroll.y + this.height)
+					this.scroll.y += this.height;
+				else if (targetY < this.scroll.y)
+					this.scroll.y -= this.height;
+			} else {
+				edge = targetX - this.deadzone.x;
+				if (this.scroll.x > edge)
+					this.scroll.x = edge;
+				edge = targetX + this.target.width - this.deadzone.x - this.deadzone.width;
+				if (this.scroll.x < edge)
+					this.scroll.x = edge;
+
+				edge = targetY - this.deadzone.y;
+				if (this.scroll.y > edge)
+					this.scroll.y = edge;
+				edge = targetY + this.target.height - this.deadzone.y - this.deadzone.height;
+				if (this.scroll.y < edge)
+					this.scroll.y = edge;
+			}
+		}
+	}
+
+	// Make sure we didn't go outside the camera's bounds
+	if (this.bounds !== null) {
+		var zoomOffsetWidth = 0;
+		var zoomOffsetHeight = 0;
+
+		if (this.getZoom() > 1) {
+			zoomOffsetWidth = this.width * (this.getZoom() - 1) / (2 * this.getZoom());
+			zoomOffsetHeight = this.height * (this.getZoom() - 1) / (2 * this.getZoom());
+		}
+
+		if (this.scroll.x < this.bounds.getLeft() - zoomOffsetWidth)
+			this.scroll.x = this.bounds.getLeft() - zoomOffsetWidth;
+		if (this.scroll.x > this.bounds.getRight() - this.width + zoomOffsetWidth)
+			this.scroll.x = this.bounds.getRight() - this.width + zoomOffsetWidth;
+		if (this.scroll.y < this.bounds.getTop() - zoomOffsetHeight)
+			this.scroll.y = this.bounds.getTop() - zoomOffsetHeight;
+		if (this.scroll.y > this.bounds.getBottom() - this.height + zoomOffsetHeight)
+			this.scroll.y = this.bounds.getBottom() - this.height + zoomOffsetHeight;
+	}
+
+	// Update the "flash" special effect
+	if (this._fxFlashAlpha > 0.0) {
+		this._fxFlashAlpha -= Flixel.FlxG.elapsed / this._fxFlashDuration;
+		if ((this._fxFlashAlpha <= 0) && (this._fxFlashComplete !== null))
+			this._fxFlashComplete();
+	}
+
+	// Update the "fade" special effect
+	if ((this._fxFadeAlpha > 0.0) && (this._fxFadeAlpha < 1.0)) {
+		this._fxFadeAlpha += Flixel.FlxG.elapsed / this._fxFadeDuration;
+		if (this._fxFadeAlpha >= 1.0) {
+			this._fxFadeAlpha = 1.0;
+			if (this._fxFadeComplete !== null)
+				this._fxFadeComplete();
+		}
+	}
+
+	// Update the "shake" special effect
+	if (this._fxShakeDuration > 0) {
+		this._fxShakeDuration -= Flixel.FlxG.elapsed;
+		if (this._fxShakeDuration <= 0) {
+			this._fxShakeOffset.make();
+			if (this._fxShakeComplete !== null)
+				this._fxShakeComplete();
+		} else {
+			if ((this._fxShakeDirection == Flixel.FlxCamera.SHAKE_BOTH_AXES) || (this._fxShakeDirection == Flixel.FlxCamera.SHAKE_HORIZONTAL_ONLY))
+				this._fxShakeOffset.x = (Flixel.FlxG.random() * this._fxShakeIntensity * this.width * 2 - this._fxShakeIntensity * this.width) * this._zoom;
+			if ((this._fxShakeDirection == Flixel.FlxCamera.SHAKE_BOTH_AXES) || (this._fxShakeDirection == Flixel.FlxCamera.SHAKE_VERTICAL_ONLY))
+				this._fxShakeOffset.y = (Flixel.FlxG.random() * this._fxShakeIntensity * this.height * 2 - this._fxShakeIntensity * this.height) * this._zoom;
+		}
+	}
+};
+
+/**
+ * Tells this camera object what <code>FlxObject</code> to track.
+ * 
+ * @param Target
+ *            The object you want the camera to track. Set to null to not follow anything.
+ * @param Style
+ *            Leverage one of the existing "deadzone" presets. If you use a custom deadzone, ignore this parameter and manually specify the deadzone after calling <code>follow()</code>.
+ */
+Flixel.FlxCamera.prototype.follow = function(Target, Style, Offset)
+{
+	this._style = (Style === undefined) ? Flixel.FlxCamera.STYLE_LOCKON : Style;
+	
+	this.target = Target;
+	var helper;
+	var w = 0;
+	var h = 0;
+
+	switch (Style) {
+		case Flixel.FlxCamera.STYLE_PLATFORMER:
+			w = (this.width / 8) + (Offset !== null ? Offset.x : 0);
+			h = (this.height / 3) + (Offset !== null ? Offset.y : 0);
+			this.deadzone = new Flixel.FlxRect((this.width - w) / 2, (this.height - h) / 2 - h * 0.25, w, h);
+			break;
+		case Flixel.FlxCamera.STYLE_TOPDOWN:
+			helper = Math.max(this.width, this.height) / 4;
+			this.deadzone = new Flixel.FlxRect((this.width - helper) / 2, (this.height - helper) / 2, helper, helper);
+			break;
+		case Flixel.FlxCamera.STYLE_TOPDOWN_TIGHT:
+			helper = Math.max(this.width, this.height) / 8;
+			this.deadzone = new Flixel.FlxRect((this.width - helper) / 2, (this.height - helper) / 2, helper, helper);
+			break;
+		case Flixel.FlxCamera.STYLE_LOCKON:
+			if (this.target !== null) {
+				w = this.target.width + (Offset !== null ? Offset.x : 0);
+				h = this.target.height + (Offset !== null ? Offset.y : 0);
+			}
+			this.deadzone = new Flixel.FlxRect((this.width - w) / 2, (this.height - h) / 2 - h * 0.25, w, h);
+			break;
+		case Flixel.FlxCamera.STYLE_SCREEN_BY_SCREEN:
+			this.deadzone = new Flixel.FlxRect(0, 0, this.width, this.height);
+			break;
+		default:
+			this.deadzone = null;
+			break;
+	}
+};
+
+/**
+ * Move the camera focus to this location instantly.
+ * 
+ * @param Point
+ *            Where you want the camera to focus.
+ */
+Flixel.FlxCamera.prototype.focusOn = function(Point)
+{
+	Point.x += (Point.x > 0) ? 0.0000001 : -0.0000001;
+	Point.y += (Point.y > 0) ? 0.0000001 : -0.0000001;
+	this.scroll.make(Point.x - this.width * 0.5, Point.y - this.height * 0.5);
+};
+
+/**
+ * Specify the boundaries of the level or where the camera is allowed to move.
+ * 
+ * @param X
+ *            The smallest X value of your level (usually 0).
+ * @param Y
+ *            The smallest Y value of your level (usually 0).
+ * @param Width
+ *            The largest X value of your level (usually the level width).
+ * @param Height
+ *            The largest Y value of your level (usually the level height).
+ * @param UpdateWorld
+ *            Whether the global quad-tree's dimensions should be updated to match (default: false).
+ */
+Flixel.FlxCamera.prototype.setBounds = function(X, Y, Width, Height, UpdateWorld)
+{
+	X = X || 0;
+	Y = Y || 0;
+	Width = Width || 0;
+	Height = Height || 0;
+
+	if (this.bounds === null)
+		this.bounds = new Flixel.FlxRect();
+	this.bounds.make(X, Y, Width, Height);
+	if (UpdateWorld)
+		Flixel.FlxG.worldBounds.copyFrom(this.bounds);
+	this.update();
+};
+
+/**
+ * The screen is filled with this color and gradually returns to normal.
+ * 
+ * @param Color
+ *            The color you want to use.
+ * @param Duration
+ *            How long it takes for the flash to fade.
+ * @param OnComplete
+ *            A function you want to run when the flash finishes.
+ * @param Force
+ *            Force the effect to reset.
+ */
+Flixel.FlxCamera.prototype.flash = function(Color, Duration, OnComplete, Force)
+{
+	Color = Color || 0xffffffff;
+	Duration = Duration || 1;
+	Force = (Force === undefined) ? false : Force;
+
+	if (!Force && (this._fxFlashAlpha > 0.0))
+		return;
+	this._fxFlashColor = Color;
+	if (Duration <= 0)
+		Duration = Number.MIN_VALUE;
+	this._fxFlashDuration = Duration;
+	this._fxFlashComplete = OnComplete;
+	this._fxFlashAlpha = 1.0;
+};
+
+/**
+ * The screen is gradually filled with this color.
+ * 
+ * @param Color
+ *            The color you want to use.
+ * @param Duration
+ *            How long it takes for the fade to finish.
+ * @param OnComplete
+ *            A function you want to run when the fade finishes.
+ * @param Force
+ *            Force the effect to reset.
+ */
+Flixel.FlxCamera.prototype.fade = function(Color, Duration, OnComplete, Force)
+{
+	Color = Color || 0xff000000;
+	Duration = Duration || 1;
+	Force = (Force === undefined) ? false : Force;
+
+	if (!Force && (this._fxFadeAlpha > 0.0))
+		return;
+	this._fxFadeColor = Color;
+	if (Duration <= 0)
+		Duration = Number.MIN_VALUE;
+	this._fxFadeDuration = Duration;
+	this._fxFadeComplete = OnComplete;
+	this._fxFadeAlpha = Number.MIN_VALUE;
+};
+
+/**
+ * A simple screen-shake effect.
+ * 
+ * @param Intensity
+ *            Percentage of screen size representing the maximum distance that the screen can move while shaking.
+ * @param Duration
+ *            The length in seconds that the shaking effect should last.
+ * @param OnComplete
+ *            A function you want to run when the shake effect finishes.
+ * @param Force
+ *            Force the effect to reset (default = true, unlike flash() and fade()!).
+ * @param Direction
+ *            Whether to shake on both axes, just up and down, or just side to side (use class constants SHAKE_BOTH_AXES, SHAKE_VERTICAL_ONLY, or SHAKE_HORIZONTAL_ONLY).
+ */
+Flixel.FlxCamera.prototype.shake = function(Intensity, Duration, OnComplete, Force, Direction)
+{
+	Intensity = Intensity || 0.05;
+	Duration = Duration || 0.5;
+	Force = (Force === undefined) ? true : Force;
+	Direction = Direction || Flixel.FlxCamera.SHAKE_BOTH_AXES;
+
+	if (!Force && ((this._fxShakeOffset.x !== 0) || (this._fxShakeOffset.y !== 0)))
+		return;
+	this._fxShakeIntensity = Intensity;
+	this._fxShakeDuration = Duration;
+	this._fxShakeComplete = OnComplete;
+	this._fxShakeDirection = Direction;
+	this._fxShakeOffset.make();
+};
+
+/**
+ * Just turns off all the camera effects instantly.
+ */
+Flixel.FlxCamera.prototype.stopFX = function()
+{
+	this._fxFlashAlpha = 0.0;
+	this._fxFadeAlpha = 0.0;
+	this._fxShakeDuration = 0;
+	this.x = this.x + this.width * 0.5;
+	this.y = this.y + this.height * 0.5;
+};
+
+/**
+ * Copy the bounds, focus object, and deadzone info from an existing camera.
+ * 
+ * @param Camera
+ *            The camera you want to copy from.
+ * 
+ * @return A reference to this <code>FlxCamera</code> object.
+ */
+Flixel.FlxCamera.prototype.copyFrom = function(Camera)
+{
+	if (Camera.bounds === null)
+		this.bounds = null;
+	else {
+		if (this.bounds === null)
+			this.bounds = new Flixel.FlxRect();
+		this.bounds.copyFrom(Camera.bounds);
+	}
+	this.target = Camera.target;
+	if (this.target !== null) {
+		if (Camera.deadzone === null)
+			this.deadzone = null;
+		else {
+			if (this.deadzone === null)
+				this.deadzone = new Flixel.FlxRect();
+			this.deadzone.copyFrom(Camera.deadzone);
+		}
+	}
+	return this;
+};
+
+/**
+ * The zoom level of this camera. 1 = 1:1, 2 = 2x zoom, etc.
+ */
+Flixel.FlxCamera.prototype.getZoom = function()
+{
+	return this._zoom;
+};
+
+/**
+ * @private
+ */
+Flixel.FlxCamera.prototype.setZoom = function(Zoom)
+{
+	if (Zoom === 0)
+		this._zoom = Flixel.FlxCamera.defaultZoom;
+	else
+		this._zoom = Zoom;
+	this.setScale(this._zoom, this._zoom);
+};
+
+/**
+ * The scale mode of this camera.
+ */
+Flixel.FlxCamera.prototype.getScaleMode = function()
+{
+	return this._scaleMode;
+};
+
+/**
+ * @private
+ */
+Flixel.FlxCamera.prototype.setScaleMode = function(ScaleMode)
+{
+	if (ScaleMode === 0)
+		this._scaleMode = Flixel.FlxCamera.defaultScaleMode;
+	else
+		this._scaleMode = ScaleMode;
+	this.setScale(this._zoom, this._zoom);
+};
+
+/**
+ * The alpha value of this camera display (a Number between 0.0 and 1.0).
+ */
+Flixel.FlxCamera.prototype.getAlpha = function()
+{
+	return this._alpha;
+};
+
+/**
+ * @private
+ */
+Flixel.FlxCamera.prototype.setAlpha = function(Alpha)
+{
+	this._alpha = Alpha;
+};
+
+/**
+ * The angle of the camera display (in degrees). Currently yields weird display results, since cameras aren't nested in an extra display object yet.
+ */
+Flixel.FlxCamera.prototype.getAngle = function()
+{
+	return this._angle;
+};
+
+/**
+ * @private
+ */
+Flixel.FlxCamera.prototype.setAngle = function(Angle)
+{
+	this._angle = Angle;
+};
+
+/**
+ * The color tint of the camera display.
+ */
+Flixel.FlxCamera.prototype.getColor = function()
+{
+	return this._color;
+};
+
+/**
+ * @private
+ */
+Flixel.FlxCamera.prototype.setColor = function(Color)
+{
+	this._color = Color;
+};
+
+/**
+ * The scale of the camera object, irrespective of zoom. Currently yields weird display results, since cameras aren't nested in an extra display object yet.
+ */
+Flixel.FlxCamera.prototype.getScale = function()
+{
+	return this._point.make(this._scaleX, this._scaleY);
+};
+
+/**
+ * @private
+ */
+Flixel.FlxCamera.prototype.setScale = function(X, Y)
+{
+	this._scaleX = X;
+	this._scaleY = Y;
+	return; // TODO: Fix scaling
+
+	/*var stage = Flixel.FlxG.getStage();
+	var screenAspectRatio = Flixel.FlxG.screenWidth / Flixel.FlxG.screenHeight;
+
+	switch (_scaleMode) {
+		case Flixel.FlxCamera.NO_SCALE:
+			this._screenScaleFactorY = 1;
+			this._screenScaleFactorX = 1;
+			this.viewportWidth = int(FlxG.screenWidth / X);
+			this.viewportHeight = int(FlxG.screenHeight / Y);
+			break;
+
+		default:
+		case STRETCH:
+			this._screenScaleFactorY = Flixel.FlxG.screenHeight / stage.stageHeight;
+			this._screenScaleFactorX = Flixel.FlxG.screenWidth / stage.stageWidth;
+			this.viewportWidth = int(stage.stageWidth / X);
+			this.viewportHeight = int(stage.stageHeight / Y);
+			break;
+
+		case FILL_X:
+			this._screenScaleFactorX = Flixel.FlxG.screenWidth / (stage.stageHeight * screenAspectRatio);
+			this._screenScaleFactorY = Flixel.FlxG.screenHeight / stage.stageHeight;
+			this.viewportWidth = int((stage.stageHeight * screenAspectRatio) / X);
+			this.viewportHeight = int(stage.stageHeight / Y);
+			break;
+
+		case FILL_Y:
+			this._screenScaleFactorX = Flixel.FlxG.screenWidth / stage.stageWidth;
+			this._screenScaleFactorY = Flixel.FlxG.screenHeight / (stage.stageWidth / screenAspectRatio);
+			this.viewportWidth = int(stage.stageWidth / X);
+			this.viewportHeight = int((stage.stageWidth / screenAspectRatio) / Y);
+			break;
+	}
+
+	_scaleX = viewportWidth;
+	_scaleY = viewportHeight;*/
+};
+
+/**
+ * Fill the camera with the specified color.
+ * 
+ * @param Color
+ *            The color to fill with in 0xAARRGGBB hex format.
+ * @param BlendAlpha
+ *            Whether to blend the alpha value or just wipe the previous contents. Default is true.
+ */
+Flixel.FlxCamera.prototype.fill = function(Color, BlendAlpha)
+{
+	BlendAlpha = (BlendAlpha === undefined) ? true : BlendAlpha;
+
+	var finalColor = Flixel.FlxU.multiplyColors(Color, this._color);
+	this._fill.fillRect(this._flashRect, finalColor);
+	this.buffer.copyPixels(this._fill, this._flashRect, this._flashPoint, null, null, BlendAlpha);
+};
+
+/**
+ * Internal helper function, handles the actual drawing of all the special effects.
+ */
+Flixel.FlxCamera.prototype.drawFX = function()
+{
+	var alphaComponent;
+
+	// Draw the "flash" special effect onto the buffer
+	if (this._fxFlashAlpha > 0.0) {
+		alphaComponent = this._fxFlashColor >> 24;
+		this.fill((uint(((alphaComponent <= 0) ? 0xff : alphaComponent) * this._fxFlashAlpha) << 24) + (this._fxFlashColor & 0x00ffffff));
+	}
+
+	// Draw the "fade" special effect onto the buffer
+	if (this._fxFadeAlpha > 0.0) {
+		alphaComponent = this._fxFadeColor >> 24;
+		this.fill((uint(((alphaComponent <= 0) ? 0xff : alphaComponent) * this._fxFadeAlpha) << 24) + (this._fxFadeColor & 0x00ffffff));
+	}
+
+	if ((this._fxShakeOffset.x !== 0) || (this._fxShakeOffset.y !== 0)) {
+		this.x = this.x + this._flashOffsetX + this._fxShakeOffset.x;
+		this.y = this.y + this._flashOffsetY + this._fxShakeOffset.y;
+	}
+};
+
+/**
+ * Returns the class name.
+ */
+Flixel.FlxCamera.prototype.toString = function()
+{
+	return "FlxCamera";
+};

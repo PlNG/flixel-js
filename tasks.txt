@@ -1,0 +1,4 @@
+Flixel-JS pending Tasks:
+--------------------------
+1. Create WiiU backend
+2. Improve map loading

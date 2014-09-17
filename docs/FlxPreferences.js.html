@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: plugin/store/FlxPreferences.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: plugin/store/FlxPreferences.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * A handy class use to manage the Android Like Shared Preferences.&lt;br>
+ * In Desktop it create simple text documents.&lt;br>
+ * &lt;br>
+ * v1.0 Initial version
+ * 
+ * @version 1.0 - 17/09/2014
+ * @author	ratalaika / ratalaikaGames
+ */
+
+/**
+ * Class constructor.
+ */
+Flixel.plugin.store.FlxPreferences = function(name)
+{
+	this.preferences = new Flixel.plugin.store.FlxSave();
+	this.preferences.bind(name);
+};
+
+
+/**
+ * The reference to the Preferences object.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.preferences = null;
+
+/**
+ * Static initializer.
+ */
+Flixel.plugin.store.FlxPreferences.initPreferences = function(name)
+{
+	name = (name === undefined) ? "FlixelPref" : name;
+	return new Flixel.plugin.store.FlxPreferences(name);
+};
+
+/**
+ * Get a boolean value from the preferences.
+ * 
+ * @param key
+ *            The key of the boolean.
+ * @param def
+ *            The default value.
+ * @return The boolean attached to the key, or the default value if it is not
+ *         found.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.getBoolean = function(key, def)
+{
+	return (this.preferences.data[key] === undefined) ? def : this.preferences.data[key];
+};
+
+/**
+ * Get a integer value from the preferences.
+ * 
+ * @param key
+ *            The key of the integer.
+ * @param def
+ *            The default value.
+ * @return The integer attached to the key, or the default value if it is not
+ *         found.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.getInt= function(key, def)
+{
+	return (this.preferences.data[key] === undefined) ? def : this.preferences.data[key];
+};
+
+/**
+ * Get a float value from the preferences.
+ * 
+ * @param key
+ *            The key of the float.
+ * @param def
+ *            The default value.
+ * @return The float attached to the key, or the default value if it is not
+ *         found.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.getFloat= function(key, def)
+{
+	return (isNaN(this.preferences.data[key]) || this.preferences.data[key] === undefined || this.preferences.data[key] === null) ? def : this.preferences.data[key];
+};
+
+/**
+ * Get a string value from the preferences.
+ * 
+ * @param key
+ *            The key of the string.
+ * @param def
+ *            The default value.
+ * @return The string attached to the key, or the default value if it is not
+ *         found.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.getString= function(key, def)
+{
+	return (this.preferences.data[key] === undefined) ? def : this.preferences.data[key];
+};
+
+/**
+ * Get a long value from the preferences.
+ * 
+ * @param key
+ *            The key of the long.
+ * @param def
+ *            The default value.
+ * @return The long attached to the key, or the default value if it is not
+ *         found.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.getLong= function(key, def)
+{
+	return (this.preferences.data[key] === undefined) ? def : this.preferences.data[key];
+};
+
+/**
+ * Set a boolean value from the preferences.
+ * 
+ * @param key
+ *            The key of the boolean.
+ * @param value
+ *            The boolean value.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.setBoolean= function(key, value)
+{
+	this.preferences.data[key] = value;
+	this.preferences.flush();
+};
+
+/**
+ * Set a integer value from the preferences.
+ * 
+ * @param key
+ *            The key of the integer.
+ * @param value
+ *            The integer value.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.setInt= function(key, value)
+{
+	this.preferences.data[key] = value;
+	this.preferences.flush();
+};
+
+/**
+ * Set a float value from the preferences.
+ * 
+ * @param key
+ *            The key of the float.
+ * @param value
+ *            The float value.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.setFloat= function(key, value)
+{
+	this.preferences.data[key] = value;
+	this.preferences.flush();
+};
+
+/**
+ * Set a string value from the preferences.
+ * 
+ * @param key
+ *            The key of the string.
+ * @param value
+ *            The string value.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.setString= function(key, value)
+{
+	this.preferences.data[key] = value;
+	this.preferences.flush();
+};
+
+/**
+ * Set a long value from the preferences.
+ * 
+ * @param key
+ *            The key of the long.
+ * @param value
+ *            The long value.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.setLong= function(key, value)
+{
+	this.preferences.data[key] = value;
+	this.preferences.flush();
+};
+
+/**
+ * Remove the preference attached to the string
+ * 
+ * @param key
+ *            The key of the preference.
+ */
+Flixel.plugin.store.FlxPreferences.prototype.removePreference = function(key)
+{
+	this.preferences.data[key] = null;
+	this.preferences.flush();
+};
+
+/**
+ * Clear all the preferences. THEY CAN'T BE RECOVERED!!! USE AT YOUR OWN RISK!!!
+ */
+Flixel.plugin.store.FlxPreferences.prototype.clearPreferences = function()
+{
+	this.preferences.erase();
+	this.preferences.flush();
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Flixel.FlxBasic.html">FlxBasic</a></li><li><a href="ScaleManager.html">ScaleManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="Flixel.html">Flixel</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BitmapData">BitmapData</a></li><li><a href="global.html#Cache">Cache</a></li><li><a href="global.html#CanvasManager">CanvasManager</a></li><li><a href="global.html#ColorTransform">ColorTransform</a></li><li><a href="global.html#Device">Device</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#FlixelExport">FlixelExport</a></li><li><a href="global.html#inherit">inherit</a></li><li><a href="global.html#int">int</a></li><li><a href="global.html#Loader">Loader</a></li><li><a href="global.html#LocalStorage">LocalStorage</a></li><li><a href="global.html#Matrix">Matrix</a></li><li><a href="global.html#Resource">Resource</a></li><li><a href="global.html#sleep">sleep</a></li><li><a href="global.html#SoundChannel">SoundChannel</a></li><li><a href="global.html#SoundManager">SoundManager</a></li><li><a href="global.html#SoundTransform">SoundTransform</a></li><li><a href="global.html#startTimer">startTimer</a></li><li><a href="global.html#StorageManager">StorageManager</a></li><li><a href="global.html#uint">uint</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed Sep 17 2014 12:41:42 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

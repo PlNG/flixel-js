@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: system/input/Mouse.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: system/input/Mouse.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * This class helps contain and track the mouse pointer in your game.
+ * Automatically accounts for parallax scrolling, etc.
+ * 
+ * v1.0 Initial version
+ * 
+ * @version 1.0 - 17/09/2014
+ * @author	Adam Atomic
+ * @author	ratalaika / ratalaikaGames
+ */
+
+/**
+ * Constructor.
+ */
+Flixel.system.input.Mouse = function(CursorContainer)
+{
+	Flixel.system.input.Mouse.parent.constructor.apply(this);
+
+	this.screenX = 0;
+	this.screenY = 0;
+	this._lastWheel = this.wheel = 0;
+	this._point = new Flixel.FlxPoint();
+	this._pointers = [];
+	this._pointers.push(new Flixel.system.input.Mouse.Pointer());
+	this.activePointers = 0;
+	this.offset = new Flixel.FlxPoint();
+	this.scale = new Flixel.FlxPoint(1, 1);
+};
+extend(Flixel.system.input.Mouse, Flixel.FlxPoint);
+
+/**
+ * Current "delta" value of mouse wheel.  If the wheel was just scrolled up, it will have a positive value.  If it was just scrolled down, it will have a negative value.  If it wasn't just scroll this frame, it will be 0.
+ */
+Flixel.system.input.Mouse.prototype.wheel = 0;
+/**
+ * Current X position of the mouse pointer on the screen.
+ */
+Flixel.system.input.Mouse.prototype.screenX = 0;
+/**
+ * Current Y position of the mouse pointer on the screen.
+ */
+Flixel.system.input.Mouse.prototype.screenY = 0;
+/**
+ * Helper variables for recording purposes.
+ */
+Flixel.system.input.Mouse.prototype._lastWheel = 0;
+/**
+ * Pre allocated point used to prevent to much initialization.
+ */
+Flixel.system.input.Mouse.prototype._point = null;
+/**
+ * An array of all the pointers in the game.
+ */
+Flixel.system.input.Mouse.prototype._pointers = null;
+/**
+ * The current active pointers.
+ */
+Flixel.system.input.Mouse.prototype.activePointers = 0;
+/**
+ * This is just a reference to the current cursor image, if there is one.
+ */
+Flixel.system.input.Mouse.prototype._cursor = null;
+/**
+ * The screen offset.
+ */
+Flixel.system.input.Mouse.prototype.offset = null;
+/**
+ * The screen scale.
+ */
+Flixel.system.input.Mouse.prototype.scale = null;
+
+/**
+ * Clean up memory.
+ */
+Flixel.system.input.Mouse.prototype.destroy = function()
+{
+	this._point = null;
+	this._pointers.length = 0;
+	this._pointers = null;
+	this.offset = null;
+};
+
+/**
+ * Either show an existing cursor or load a new one.
+ * 
+ * @param	Graphic		The image you want to use for the cursor.
+ * @param	Scale		Change the size of the cursor.  Default = 1, or native size.  2 = 2x as big, 0.5 = half size, etc.
+ * @param	XOffset		The number of pixels between the mouse's screen position and the graphic's top left corner.
+ * @param	YOffset		The number of pixels between the mouse's screen position and the graphic's top left corner. 
+ */
+Flixel.system.input.Mouse.prototype.show = function(Graphic, Scale, XOffset, YOffset)
+{
+	Scale = (Scale === undefined) ? 1 : Scale;
+	XOffset = (XOffset === undefined) ? 0 : XOffset;
+	YOffset = (YOffset === undefined) ? 0 : YOffset;
+
+	if (Graphic !== null && Graphic !== undefined)
+		this.load(Graphic, Scale, XOffset, YOffset);
+	else if (this._cursor === null)
+		this.load();
+};
+
+/**
+ * Hides the mouse cursor
+ */
+Flixel.system.input.Mouse.prototype.hide = function()
+{
+	// Show the cursor
+	Flixel.FlxG.getStage().style.cursor = "";
+
+	if (this._cursor !== null)
+		this._cursor.visible = false;
+};
+
+/**
+ * Read only, check visibility of mouse cursor.
+ */
+Flixel.system.input.Mouse.prototype.getVisible = function()
+{
+	if (this._cursor === null || Flixel.FlxG.device.isMobile)
+		return true;
+	else
+		return this._cursor.visible;
+};
+
+/**
+ * Load a new mouse cursor graphic
+ * 
+ * @param	Graphic		The image you want to use for the cursor.
+ * @param	Scale		Change the size of the cursor.
+ * @param	XOffset		The number of pixels between the mouse's screen position and the graphic's top left corner.
+ * @param	YOffset		The number of pixels between the mouse's screen position and the graphic's top left corner. 
+ */
+Flixel.system.input.Mouse.prototype.load = function(Graphic, Scale, XOffset, YOffset)
+{
+	Scale = (Scale === undefined) ? 1 : Scale;
+	XOffset = (XOffset === undefined) ? 0 : XOffset;
+	YOffset = (YOffset === undefined) ? 0 : YOffset;
+
+	if (Graphic === null) {
+		Flixel.FlxG.getStage().style.cursor = "";
+		Graphic = Flixel.data.FlxSystemAsset.ImgDefault; // TODO: Default cursor
+		return;
+	}
+	this._cursor = new Flixel.FlxSprite();
+	this._cursor.loadGraphic(Graphic);
+	this._cursor.offset.x = XOffset;
+	this._cursor.offset.y = YOffset;
+	this._cursor.scale.x = this._cursor.scale.x = Scale;
+
+	// Hide system cursor
+	Flixel.FlxG.getStage().style.cursor = "none";
+};
+
+/**
+ * Unload the current cursor graphic.  If the current cursor is visible,
+ * then the default system cursor is loaded up to replace the old one.
+ */
+Flixel.system.input.Mouse.prototype.unload = function()
+{
+	if (this._cursor !== null) {
+		if (this._cursor.visible)
+			this.load();
+		else {
+			this._cursor = null;
+		}
+	}
+};
+
+/**
+ * Called by the internal game loop to update the mouse pointer's position in the game world.
+ * Also updates the just pressed/just released flags.
+ * 
+ * @param	X			The current X position of the mouse in the window.
+ * @param	Y			The current Y position of the mouse in the window.
+ * @param	XScroll		The amount the game world has scrolled horizontally.
+ * @param	YScroll		The amount the game world has scrolled vertically.
+ */
+Flixel.system.input.Mouse.prototype.update = function()
+{
+	var o;
+	var i = 0;
+	var l = this._pointers.length;
+
+	while (i &lt; l) {
+		o = this._pointers[i];
+
+		if ((o.last == -1) && (o.current == -1))
+			o.current = 0;
+		else if ((o.last == 2) && (o.current == 2))
+			o.current = 1;
+		o.last = o.current;
+
+		++i;
+	}
+
+	this.updateCursor();
+};
+
+/**
+ * Internal function for helping to update the cursor graphic and world coordinates.
+ */
+Flixel.system.input.Mouse.prototype.updateCursor = function()
+{
+	var o = this._pointers[0];
+	
+	// Actually position the Flixel mouse cursor graphic
+	if(this._cursor !== null) {
+		this._cursor.x = o.screenPosition.x;
+		this._cursor.y = o.screenPosition.y;
+	}
+	
+	// Update the x, y, screenX, and screenY variables based on the default camera.
+	// This is basically a combination of getWorldPosition() and getScreenPosition()
+	var camera = Flixel.FlxG.camera;
+	if (camera !== undefined && camera !== null) {
+		this.screenX = int((o.screenPosition.x - camera.x)/(camera.getZoom() * camera._screenScaleFactorX));
+		this.screenY = int((o.screenPosition.y - camera.y)/(camera.getZoom() * camera._screenScaleFactorY));
+		this.x = this.screenX + camera.scroll.x;
+		this.y = this.screenY + camera.scroll.y;
+	}
+};
+
+/**
+ * Fetch the world position of the mouse on any given camera.
+ * NOTE: Mouse.x and Mouse.y also store the world position of the mouse cursor on the main camera.
+ * 
+ * @param Camera	If unspecified, first/main global camera is used instead.
+ * @param Point		An existing point object to store the results (if you don't want a new one created). 
+ * 
+ * @return The mouse's location in world space.
+ */
+Flixel.system.input.Mouse.prototype.getWorldPosition = function(Camera, Point, Pointer)
+{
+	Pointer = (Pointer ===  undefined) ? 0 : Pointer;
+	
+	if (Camera === null || Camera === undefined)
+		Camera = Flixel.FlxG.camera;
+	if (Point === null || Point === undefined)
+		Point = new Flixel.FlxPoint();
+
+	this.getScreenPosition(Camera, this._point, Pointer);
+	Point.x = this._point.x + Camera.scroll.x;
+	Point.y = this._point.y + Camera.scroll.y;
+	return Point;
+};
+
+/**
+ * Fetch the screen position of the mouse on any given camera.
+ * NOTE: Mouse.screenX and Mouse.screenY also store the screen position of the mouse cursor on the main camera.
+ * 
+ * @param Camera	If unspecified, first/main global camera is used instead.
+ * @param Point		An existing point object to store the results (if you don't want a new one created). 
+ * 
+ * @return The mouse's location in screen space.
+ */
+Flixel.system.input.Mouse.prototype.getScreenPosition = function(Camera, Point, Pointer)
+{
+	Pointer = (Pointer ===  undefined) ? 0 : Pointer;
+	
+	if (Camera === null || Camera === undefined)
+		Camera = Flixel.FlxG.camera;
+	if (Point === null || Point === undefined)
+		Point = new Flixel.FlxPoint();
+	
+	if (Pointer >= this._pointers.length)
+		return Point;
+	
+	var o = this._pointers[Pointer];
+
+	Point.x = (o.screenPosition.x - Camera.x) / (Camera.getZoom() * Camera._screenScaleFactorX);
+	Point.y = (o.screenPosition.y - Camera.y) / (Camera.getZoom() * Camera._screenScaleFactorY);
+	return Point;
+};
+
+/**
+ * Resets the just pressed/just released flags and sets mouse to not pressed.
+ */
+Flixel.system.input.Mouse.prototype.reset = function()
+{
+	this._pointers.length = 0;
+	this._pointers.push(new Flixel.system.input.Mouse.Pointer());
+};
+
+/**
+ * Check to see if the mouse is pressed.
+ * 
+ * @return	Whether the mouse is pressed.
+ */
+Flixel.system.input.Mouse.prototype.pressed = function(Pointer)
+{
+	Pointer = (Pointer === undefined) ? 0 : Pointer;
+	
+	if (Pointer >= this._pointers.length)
+		return false;
+	return this._pointers[Pointer].current > 0;
+};
+
+/**
+ * Check to see if the mouse was just pressed.
+ * 
+ * @return Whether the mouse was just pressed.
+ */
+Flixel.system.input.Mouse.prototype.justPressed = function(Pointer)
+{
+	Pointer = (Pointer === undefined) ? 0 : Pointer;
+	
+	if (Pointer >= this._pointers.length)
+		return false;
+	return this._pointers[Pointer].current == 2;
+};
+
+/**
+ * Check to see if the mouse was just released.
+ * 
+ * @return	Whether the mouse was just released.
+ */
+Flixel.system.input.Mouse.prototype.justReleased = function(Pointer)
+{
+	Pointer = (Pointer === undefined) ? 0 : Pointer;
+	
+	if (Pointer >= this._pointers.length)
+		return false;
+	return this._pointers[Pointer].current == -1;
+};
+
+/**
+ * Event handler so FlxGame can update the mouse.
+ * 
+ * @param	event	A &lt;code>MouseEvent&lt;/code> object.
+ */
+Flixel.system.input.Mouse.prototype.handleMouseDown = function(event)
+{
+	var o;
+	var Pointer = 0;
+	
+	// Check it it's a touch event or not
+	if (event.changedTouches) {
+		for (var i = 0; i &lt; event.changedTouches.length; i++) {
+			Pointer = event.changedTouches[i].identifier;
+			var touch = event.changedTouches[i];
+
+			if (Pointer >= this._pointers.length) {
+				o = new Flixel.system.input.Mouse.Pointer();
+				this._pointers.push(o);
+			} else
+				o = this._pointers[Pointer];
+
+			if (o.current > 0)
+				o.current = 1;
+			else
+				o.current = 2;
+			
+			o.screenPosition.x = (touch.pageX - this.offset.x) * this.scale.x;
+			o.screenPosition.y = (touch.pageY - this.offset.y) * this.scale.y;
+
+			this.activePointers++;
+		}
+	} else {
+		if (Pointer >= this._pointers.length) {
+			o = new Flixel.system.input.Mouse.Pointer();
+			this._pointers.push(o);
+		} else
+			o = this._pointers[Pointer];
+
+		if (o.current > 0)
+			o.current = 1;
+		else
+			o.current = 2;
+		
+		o.screenPosition.x = (event.pageX - this.offset.x) * this.scale.x;
+		o.screenPosition.y = (event.pageY - this.offset.y) * this.scale.y;
+		
+		this.activePointers++;
+	}
+};
+
+/**
+ * Event handler so FlxGame can update the mouse.
+ * 
+ * @param	event	A &lt;code>MouseEvent&lt;/code> object.
+ */
+Flixel.system.input.Mouse.prototype.handleMouseUp = function(event)
+{
+	var o;
+	var Pointer = 0;
+
+	// Check it it's a touch event or not
+	if (event.changedTouches) {
+		for (var i = 0; i &lt; event.changedTouches.length; i++) {
+			Pointer = event.changedTouches[i].identifier;
+			var touch = event.changedTouches[i];
+
+			if (Pointer >= this._pointers.length) {
+				o = new Flixel.system.input.Mouse.Pointer();
+				this._pointers.push(o);
+			} else
+				o = this._pointers[Pointer];
+
+			if (o.current > 0)
+				o.current = -1;
+			else
+				o.current = 0;
+			
+			o.screenPosition.x = (touch.pageX - this.offset.x) * this.scale.x;
+			o.screenPosition.y = (touch.pageY - this.offset.y) * this.scale.y;
+
+			this.activePointers--;
+		}
+	} else {
+		if (Pointer >= this._pointers.length) {
+			o = new Flixel.system.input.Mouse.Pointer();
+			this._pointers.push(o);
+		} else
+			o = this._pointers[Pointer];
+
+		if (o.current > 0)
+			o.current = -1;
+		else
+			o.current = 0;
+		
+		o.screenPosition.x = (event.pageX - this.offset.x) * this.scale.x;
+		o.screenPosition.y = (event.pageY - this.offset.y) * this.scale.y;
+		
+		this.activePointers--;
+	}
+};
+
+/**
+ * Event handler so FlxGame can update the mouse.
+ * 
+ * @param	event	A &lt;code>MouseEvent&lt;/code> object.
+ */
+Flixel.system.input.Mouse.prototype.handleMouseWheel = function(event)
+{
+	this.wheel = event.delta;
+};
+
+/**
+ * Event handler so FlxGame can update the mouse.
+ * 
+ * @param	event	A &lt;code>MouseEvent&lt;/code> object.
+ */
+Flixel.system.input.Mouse.prototype.handleMouseMove = function(event)
+{
+	var o;
+	var Pointer = 0;
+	
+	// Check it it's a touch event or not
+	if (event.changedTouches) {
+		for (var i = 0; i &lt; event.changedTouches.length; i++) {
+			Pointer = event.changedTouches[i].identifier;
+			var touch = event.changedTouches[i];
+
+			if (Pointer >= this._pointers.length) {
+				o = new Flixel.system.input.Mouse.Pointer();
+				this._pointers.push(o);
+			} else
+				o = this._pointers[Pointer];
+
+			o.screenPosition.x = (touch.pageX - this.offset.x) * this.scale.x;
+			o.screenPosition.y = (touch.pageY - this.offset.y) * this.scale.y;
+		}
+	} else {
+		if (Pointer >= this._pointers.length) {
+			o = new Flixel.system.input.Mouse.Pointer();
+			this._pointers.push(o);
+		} else
+			o = this._pointers[Pointer];
+
+		o.screenPosition.x = (event.pageX - this.offset.x) * this.scale.x;
+		o.screenPosition.y = (event.pageY - this.offset.y) * this.scale.y;	
+
+	}
+
+	//this.clientX = event.clientX;
+	//this.clientY = event.clientY;
+
+	//this.pageX = event.pageX;
+	//this.pageY = event.pageY;
+
+	//this.screenX = event.screenX;
+	//this.screenY = event.screenY;
+};
+
+/**
+ * If the mouse changed state or is pressed, return that info now
+ * 
+ * @return	An array of key state data.  Null if there is no data.
+ */
+//TODO: This should record all pointers, not just the first one.
+Flixel.system.input.Mouse.prototype.record = function()
+{
+	var o = this._pointers[0];
+	
+	if((o.lastX == o.screenPosition.x) && (o.lastY == o.screenPosition.y) && (o.current === 0) && (this._lastWheel == this.wheel))
+		return null;
+	o.lastX = o.screenPosition.x;
+	o.lastY = o.screenPosition.y;
+	this._lastWheel = this.wheel;
+	return new Flixel.system.replay.MouseRecord(o.lastX, o.lastY, o.current, this._lastWheel);
+};
+
+/**
+ * Part of the keystroke recording system.
+ * Takes data about key presses and sets it into array.
+ * 
+ * @param	KeyStates	Array of data about key states.
+ */
+//TODO: This should play all pointers, not just the first one.
+Flixel.system.input.Mouse.prototype.playback = function(Record)
+{
+	var o = this._pointers[0];
+	
+	o.current = Record.button;
+	this.wheel = Record.wheel;
+	o.screenPosition.x = Record.x;
+	o.screenPosition.y = Record.y;
+	this.updateCursor();
+};
+
+/**
+ * Set the mouse off set.
+ * 
+ * @param offset	The offset of the stage.
+ */
+Flixel.system.input.Mouse.prototype.setOffset = function(point)
+{
+	this.offset.copyFrom(point);
+};
+
+/**
+ * An internal helper class to store the state of the pointers in game.
+ */
+Flixel.system.input.Mouse.Pointer = function()
+{
+	/**
+	 * The current pressed state of the pointer.
+	 */
+	this.current = 0;
+	/**
+	 * The last pressed state of the pointer.
+	 */
+	this.last = 0;
+	/**
+	 * The current position of the pointer in screen space.
+	 */
+	this.screenPosition = new Flixel.FlxPoint();
+	/**
+	 * The last X position of the pointer in screen space.
+	 */
+	this.lastX = 0;
+	/**
+	 * The last Y position of the pointer in screen space.
+	 */
+	this.lastY = 0;
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Flixel.FlxBasic.html">FlxBasic</a></li><li><a href="ScaleManager.html">ScaleManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="Flixel.html">Flixel</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BitmapData">BitmapData</a></li><li><a href="global.html#Cache">Cache</a></li><li><a href="global.html#CanvasManager">CanvasManager</a></li><li><a href="global.html#ColorTransform">ColorTransform</a></li><li><a href="global.html#Device">Device</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#FlixelExport">FlixelExport</a></li><li><a href="global.html#inherit">inherit</a></li><li><a href="global.html#int">int</a></li><li><a href="global.html#Loader">Loader</a></li><li><a href="global.html#LocalStorage">LocalStorage</a></li><li><a href="global.html#Matrix">Matrix</a></li><li><a href="global.html#Resource">Resource</a></li><li><a href="global.html#sleep">sleep</a></li><li><a href="global.html#SoundChannel">SoundChannel</a></li><li><a href="global.html#SoundManager">SoundManager</a></li><li><a href="global.html#SoundTransform">SoundTransform</a></li><li><a href="global.html#startTimer">startTimer</a></li><li><a href="global.html#StorageManager">StorageManager</a></li><li><a href="global.html#uint">uint</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed Sep 17 2014 12:41:42 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

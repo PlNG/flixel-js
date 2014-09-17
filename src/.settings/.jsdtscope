@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="build"/>
+	<classpathentry kind="src" path="examples/animation"/>
+	<classpathentry kind="src" path="examples/collision"/>
+	<classpathentry excluding="system/input/|plugin/|system/|system/replay/|system/atlas/|data/|support/" kind="src" path="src"/>
+	<classpathentry kind="src" path="src/data"/>
+	<classpathentry kind="src" path="src/plugin"/>
+	<classpathentry kind="src" path="src/support"/>
+	<classpathentry excluding="input/|replay/|atlas/" kind="src" path="src/system"/>
+	<classpathentry kind="src" path="src/system/atlas"/>
+	<classpathentry kind="src" path="src/system/input"/>
+	<classpathentry kind="src" path="src/system/replay"/>
+	<classpathentry kind="con" path="org.eclipse.wst.jsdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path=""/>
+</classpath>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: system/input/pads/FlxPadButton.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: system/input/pads/FlxPadButton.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * A Digital Pad button.&lt;br>
+ * &lt;br>
+ * v1.0 Initial version
+ * 
+ * @version 1.0 - 17/09/2014
+ * @author	ratalaika / ratalaikaGames
+ */
+/**
+ * Creates a new &lt;code>FlxPadButton&lt;/code> object with a gray background and a
+ * callback function on the UI thread.
+ * 
+ * @param X
+ *            The X position of the button.
+ * @param Y
+ *            The Y position of the button.
+ * @param Label
+ *            The text that you want to appear on the button.
+ * @param OnClick
+ *            The function to call whenever the button is clicked.
+ */
+Flixel.system.input.pads.FlxPadButton = function(X, Y)
+{
+	Flixel.system.input.pads.FlxPadButton.parent.constructor.apply(this, [ X, Y ]);
+	this.loadGraphic(Flixel.data.FlxSystemAsset.ImgDefaultButton, false, false, 80, 20);
+
+	this.status = Flixel.system.input.pads.FlxPadButton.STATUS_NORMAL;
+};
+extend(Flixel.system.input.pads.FlxPadButton, Flixel.FlxSprite);
+
+/**
+ * This means the button has no finger on it.
+ */
+Flixel.system.input.pads.FlxPadButton.STATUS_NORMAL = 0;
+/**
+ * This means the finger has just touched the button.
+ */
+Flixel.system.input.pads.FlxPadButton.STATUS_JUST_PRESSED = 1;
+/**
+ * This means the finger is still pressing the button.
+ */
+Flixel.system.input.pads.FlxPadButton.STATUS_PRESSED = 2;
+/**
+ * This means the finger has just removed from the button.
+ */
+Flixel.system.input.pads.FlxPadButton.STATUS_JUST_RELEASED = 3;
+/**
+ * This means that the mouse is over the button but not pressing it (ONLY FOR
+ * DESKTOP).
+ */
+Flixel.system.input.pads.FlxPadButton.STATUS_OVER = 4;
+/**
+ * Shows the current state of the button.
+ */
+Flixel.system.input.pads.FlxPadButton.prototype.status = 0;
+/**
+ * The last detected pointer id.
+ */
+Flixel.system.input.pads.FlxPadButton.prototype._pointerId = 0;
+
+/**
+ * Basic button update logic
+ */
+Flixel.system.input.pads.FlxPadButton.prototype.update = function()
+{
+	// Figure out if the button is highlighted or pressed or what
+	if (this.cameras === null)
+		this.cameras = Flixel.FlxG.cameras;
+
+	var camera;
+	var i = 0;
+	var l = this.cameras.length;
+	var pointerId = 0;
+	var totalPointers = Flixel.FlxG.mouse.activePointers + 1;
+	var offAll = true;
+
+	while (i &lt; l) {
+		camera = this.cameras[i++];
+		while (pointerId &lt; totalPointers) {
+			Flixel.FlxG.mouse.getWorldPosition(camera, this._point, pointerId);
+			if (this.overlapsPoint(this._point, true, camera)) {
+				offAll = false;
+
+				if (Flixel.FlxG.mouse.pressed(pointerId)) {
+					this.status = Flixel.system.input.pads.FlxPadButton.STATUS_PRESSED;
+					if (Flixel.FlxG.mouse.justPressed(pointerId)) {
+						this.status = Flixel.system.input.pads.FlxPadButton.STATUS_JUST_PRESSED;
+					}
+					this._pointerId = pointerId;
+				}
+			}
+			++pointerId;
+		}
+	}
+
+	// Terminate the just released stuff
+	if(this.status == Flixel.system.input.pads.FlxPadButton.STATUS_JUST_RELEASED) {
+		this.status = Flixel.system.input.pads.FlxPadButton.STATUS_NORMAL;
+	}
+
+	// Check if we need to set the button as just released
+	// We can have the mouse over the button and not being touching it
+	if (offAll || (!offAll && !Flixel.FlxG.mouse.pressed(this._pointerId))) {
+		if (this.status == Flixel.system.input.pads.FlxPadButton.STATUS_PRESSED) {
+			if (Flixel.FlxG.mouse.justReleased(this._pointerId))
+				this.status = Flixel.system.input.pads.FlxPadButton.STATUS_JUST_RELEASED;
+			else
+				this.status = Flixel.system.input.pads.FlxPadButton.STATUS_NORMAL;
+		}
+	}
+
+	// Then pick the appropriate frame of animation
+	if (this.status == Flixel.system.input.pads.FlxPadButton.STATUS_JUST_PRESSED || this.status == Flixel.system.input.pads.FlxPadButton.STATUS_JUST_RELEASED)
+		this.setFrame(Flixel.system.input.pads.FlxPadButton.STATUS_NORMAL);
+	else
+		this.setFrame(this.status);
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Flixel.FlxBasic.html">FlxBasic</a></li><li><a href="ScaleManager.html">ScaleManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="Flixel.html">Flixel</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BitmapData">BitmapData</a></li><li><a href="global.html#Cache">Cache</a></li><li><a href="global.html#CanvasManager">CanvasManager</a></li><li><a href="global.html#ColorTransform">ColorTransform</a></li><li><a href="global.html#Device">Device</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#FlixelExport">FlixelExport</a></li><li><a href="global.html#inherit">inherit</a></li><li><a href="global.html#int">int</a></li><li><a href="global.html#Loader">Loader</a></li><li><a href="global.html#LocalStorage">LocalStorage</a></li><li><a href="global.html#Matrix">Matrix</a></li><li><a href="global.html#Resource">Resource</a></li><li><a href="global.html#sleep">sleep</a></li><li><a href="global.html#SoundChannel">SoundChannel</a></li><li><a href="global.html#SoundManager">SoundManager</a></li><li><a href="global.html#SoundTransform">SoundTransform</a></li><li><a href="global.html#startTimer">startTimer</a></li><li><a href="global.html#StorageManager">StorageManager</a></li><li><a href="global.html#uint">uint</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed Sep 17 2014 12:41:42 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

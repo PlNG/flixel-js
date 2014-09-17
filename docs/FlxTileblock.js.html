@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: FlxTileblock.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: FlxTileblock.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * This is a basic "environment object" class, used to create simple walls and floors.&lt;br>
+ * It can be filled with a random selection of tiles to quickly add detail.&lt;br>
+ * &lt;br>
+ * v1.0 Initial version
+ * 
+ * @version 1.0 - 17/09/2014
+ * @author	Adam Atomic
+ * @author	ratalaika / ratalaikaGames
+ */
+
+/**
+ * Creates a new &lt;code>FlxBlock&lt;/code> object with the specified position and size.
+ * 
+ * @param	X			The X position of the block.
+ * @param	Y			The Y position of the block.
+ * @param	Width		The width of the block.
+ * @param	Height		The height of the block.
+ */
+Flixel.FlxTileblock = function(X, Y, Width, Height)
+{
+	Flixel.FlxTileblock.parent.constructor.apply(this, [X, Y]);
+
+	this.makeGraphic(Width, Height, Flixel.FlxG.RED, true);
+	this.active = false;
+	this.immovable = true;
+	this.moves = false;
+};
+extend(Flixel.FlxTileblock, Flixel.FlxSprite);
+
+/**
+ * Fills the block with a randomly arranged selection of graphics from the image provided.
+ * 
+ * @param	TileGraphic		The graphic class that contains the tiles that should fill this block.
+ * @param	TileWidth		The width of a single tile in the graphic.
+ * @param	TileHeight		The height of a single tile in the graphic.
+ * @param	Empties			The number of "empty" tiles to add to the auto-fill algorithm (e.g. 8 tiles + 4 empties = 1/3 of block will be open holes).
+ */
+Flixel.FlxTileblock.prototype.loadTiles = function(TileGraphic, TileWidth, TileHeight, Empties)
+{
+	if(TileGraphic === null)
+		return this;
+	
+	TileWidth = TileWidth || 0;
+	TileHeight = TileHeight || 0;
+	Empties = Empties || 0;
+	
+	//First create a tile brush
+	var sprite = new Flixel.FlxSprite().loadGraphic(TileGraphic, true, false, TileWidth, TileHeight);
+	var spriteWidth = sprite.width;
+	var spriteHeight = sprite.height;
+	var total = sprite.frames + Empties;
+	
+	//Then prep the "canvas" as it were (just doublechecking that the size is on tile boundaries)
+	var regen = false;
+	if(this.width % sprite.width !== 0)
+	{
+		this.width = uint(this.width / spriteWidth + 1) * spriteWidth;
+		regen = true;
+	}
+	
+	if(this.height % sprite.height !== 0)
+	{
+		this.height = uint(this.height / spriteHeight + 1) * spriteHeight;
+		regen = true;
+	}
+	if(regen)
+		this.makeGraphic(this.width, this.height, 0, true);
+	else
+		this.fill(0);
+	
+	//Stamp random tiles onto the canvas
+	var row = 0;
+	var column;
+	var destinationX;
+	var destinationY = 0;
+	var widthInTiles = this.width / spriteWidth;
+	var heightInTiles = this.height / spriteHeight;
+	while(row &lt; heightInTiles)
+	{
+		destinationX = 0;
+		column = 0;
+		while(column &lt; widthInTiles)
+		{
+			if(Flixel.FlxG.random() * total > Empties)
+			{
+				sprite.randomFrame();
+				sprite.drawFrame();
+				this.stamp(sprite, destinationX, destinationY);
+			}
+			destinationX += spriteWidth;
+			column++;
+		}
+		destinationY += spriteHeight;
+		row++;
+	}
+			
+	return this;
+};
+
+/**
+ * Returns the class name.
+ */
+Flixel.FlxTileblock.prototype.toString = function()
+{
+	return "FlxTileblock";
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="Flixel.FlxBasic.html">FlxBasic</a></li><li><a href="ScaleManager.html">ScaleManager</a></li></ul><h3>Namespaces</h3><ul><li><a href="Flixel.html">Flixel</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BitmapData">BitmapData</a></li><li><a href="global.html#Cache">Cache</a></li><li><a href="global.html#CanvasManager">CanvasManager</a></li><li><a href="global.html#ColorTransform">ColorTransform</a></li><li><a href="global.html#Device">Device</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#FlixelExport">FlixelExport</a></li><li><a href="global.html#inherit">inherit</a></li><li><a href="global.html#int">int</a></li><li><a href="global.html#Loader">Loader</a></li><li><a href="global.html#LocalStorage">LocalStorage</a></li><li><a href="global.html#Matrix">Matrix</a></li><li><a href="global.html#Resource">Resource</a></li><li><a href="global.html#sleep">sleep</a></li><li><a href="global.html#SoundChannel">SoundChannel</a></li><li><a href="global.html#SoundManager">SoundManager</a></li><li><a href="global.html#SoundTransform">SoundTransform</a></li><li><a href="global.html#startTimer">startTimer</a></li><li><a href="global.html#StorageManager">StorageManager</a></li><li><a href="global.html#uint">uint</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed Sep 17 2014 12:41:42 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
