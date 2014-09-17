@@ -244,6 +244,8 @@ BitmapData.prototype.draw = function(source, matrix, colorTransform, blendMode, 
  */
 BitmapData.makeRGBA = function(Color, Alpha)
 {
+	Color = (Color === undefined || Color === null) ? 0x0 : Color;
+
 	var f = Color.toString(16).pad(8, "0", "left");
 	var a = Flixel.FlxU.roundWithDec(parseInt(f.substr(0, 2), 16) / 255, 1);
 	var r = parseInt(f.substr(2, 2), 16);

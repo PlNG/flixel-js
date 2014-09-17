@@ -20,6 +20,7 @@ Flixel.FlxSprite = function(X, Y, SimpleGraphic)
 {
 	X = X || 0;
 	Y = Y || 0;
+	rectangle = rectangle || null;
 	
 	Flixel.FlxSprite.parent.constructor.apply(this, [X, Y]);
 

@@ -65,7 +65,7 @@ Flixel.FlxTileblock.prototype.loadTiles = function(TileGraphic, TileWidth, TileH
 		regen = true;
 	}
 	if(regen)
-		this.makeGraphic(this.width, this.height, 0, true);
+		this.makeGraphic(this.width, this.height, 0x0, true);
 	else
 		this.fill(0);
 	

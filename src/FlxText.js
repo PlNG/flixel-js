@@ -125,7 +125,7 @@ Flixel.FlxText.prototype.setFormat = function(Font, Size, Color, Alignment, Shad
  */
 Flixel.FlxText.prototype.getText = function()
 {
-	return this._textField.text;
+	return this._text;
 };
 
 /**
