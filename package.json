@@ -1,6 +1,6 @@
 {
-  "name": "Flixel-JS",
-  "version": "1.0.0",
+  "name": "flixel-js",
+  "version": "1.0.1",
   "description": "Flixel JS is a port to JavaScript of Flixel AS3, it has also some improvements to increase performance.",
   "author": "ratalaika && Ratalaika Games <ratalaika@gmail.com> (http://www.ratalaika.com)",
   "homepage": "http://www.ratalaika.com",
