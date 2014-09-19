@@ -275,7 +275,7 @@ Flixel.plugin.FlxBitmapFont.prototype.buildBitmapFontText = function()
 			temp = new BitmapData(this.fixedWidth, (lines.length * (this.characterHeight + this.customSpacingY)) - this.customSpacingY, true, 0xf);
 		} else {
 			temp = new BitmapData(this.getLongestLine() * (this.characterWidth + this.customSpacingX),
-					(lines.length * (characterHeight + this.customSpacingY)) - this.customSpacingY, true, 0xf);
+					(lines.length * (this.characterHeight + this.customSpacingY)) - this.customSpacingY, true, 0xf);
 		}
 
 		// Loop through each line of text
